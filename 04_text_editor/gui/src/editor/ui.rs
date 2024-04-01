@@ -5,10 +5,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub type SharedActiveFilePath = Rc<RefCell<Option<String>>>;
+pub type SharedNotification = Rc<RefCell<Option<String>>>;
 
 pub const FILE_TREE_WIDTH: f32 = 200.;
 
 pub struct EditorApp {
+    notification: SharedNotification,
     file_tree: FileTree,
     content: Content,
 }
@@ -16,9 +18,11 @@ pub struct EditorApp {
 impl Default for EditorApp {
     fn default() -> Self {
         let active_file_path = Rc::new(RefCell::new(None));
+        let notification = Rc::new(RefCell::new(None));
         Self {
+            notification: Rc::clone(&notification),
             file_tree: FileTree::new(Rc::clone(&active_file_path)),
-            content: Content::new(Rc::clone(&active_file_path)),
+            content: Content::new(Rc::clone(&active_file_path), Rc::clone(&notification)),
         }
     }
 }
@@ -37,6 +41,7 @@ impl eframe::App for EditorApp {
                 ui.menu_button("File", |ui| {
                     if ui.button("Save").clicked() {
                         self.content.save();
+                        self.notification.replace(Some(String::from("Saved")));
                         ui.close_menu();
                     }
                     if ui.button("Exit").clicked() {
@@ -60,7 +65,14 @@ impl eframe::App for EditorApp {
                 });
             });
             ui.horizontal(|ui| {
-                // add status bar
+                match self.notification.borrow().as_ref() {
+                    Some(message) => {
+                        ui.label(message);
+                    }
+                    None => {
+                        ui.label("");
+                    }
+                };
             });
         });
     }

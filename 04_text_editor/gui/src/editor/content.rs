@@ -2,18 +2,20 @@ use eframe::egui::Ui;
 use std::collections::HashMap;
 use std::fs;
 
-use super::ui::SharedActiveFilePath;
+use super::ui::{SharedActiveFilePath, SharedNotification};
 
 pub struct Content {
     pub file_contents: HashMap<String, String>,
     pub active_file_path: SharedActiveFilePath,
+    pub notification: SharedNotification,
 }
 
 impl Content {
-    pub fn new(active_file_path: SharedActiveFilePath) -> Self {
+    pub fn new(active_file_path: SharedActiveFilePath, notification: SharedNotification) -> Self {
         Content {
             file_contents: HashMap::new(),
             active_file_path,
+            notification,
         }
     }
 
@@ -28,9 +30,13 @@ impl Content {
                 } else {
                     let contents = fs::read_to_string(fp_str).unwrap_or_else(|err| {
                         if err.kind() == std::io::ErrorKind::NotFound {
-                            eprintln!("File not found: {}", err);
+                            self.notification
+                                .replace(Some(String::from(format!("File not found: {}", err))));
                         } else {
-                            eprintln!("Error reading file: {}", err);
+                            self.notification.replace(Some(String::from(format!(
+                                "Error reading file: {}",
+                                err
+                            ))));
                         }
                         "".to_string()
                     });
@@ -50,11 +56,13 @@ impl Content {
                 if let Some(content) = self.file_contents.get(fp_str) {
                     let _ = fs::write(fp_str, content);
                 } else {
-                    eprintln!("No content to save");
+                    self.notification
+                        .replace(Some(String::from("No content to save")));
                 }
             }
             _ => {
-                eprintln!("No file selected");
+                self.notification
+                    .replace(Some(String::from("No file selected")));
             }
         }
     }
