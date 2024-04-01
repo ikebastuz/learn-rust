@@ -1,0 +1,7 @@
+- [x] - Unit tests
+- [x] - Work with file
+- [ ] - Copy / Paste
+- [ ] - More visible cursor?
+- [ ] - Line wrapping
+- [ ] - cover ALL Optional responses (prevent crashes)
+- [ ] - Rope Data Structure
