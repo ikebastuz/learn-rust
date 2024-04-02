@@ -1,6 +1,6 @@
 use crate::editor::content::Content;
 use crate::editor::file_tree::FileTree;
-use eframe::egui::{menu, CentralPanel, Context, Window};
+use eframe::egui::{menu, CentralPanel, Context};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -41,7 +41,6 @@ impl eframe::App for EditorApp {
                 ui.menu_button("File", |ui| {
                     if ui.button("Save").clicked() {
                         self.content.save();
-                        // self.notification.replace(Some(String::from("Saved!")));
                         ui.close_menu();
                     }
                     if ui.button("Exit").clicked() {

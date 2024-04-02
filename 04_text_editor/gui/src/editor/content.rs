@@ -55,6 +55,7 @@ impl Content {
                 let fp_str = fp.as_str();
                 if let Some(content) = self.file_contents.get(fp_str) {
                     let _ = fs::write(fp_str, content);
+                    self.notification.replace(Some(String::from("Saved!")));
                 } else {
                     self.notification
                         .replace(Some(String::from("No content to save")));
