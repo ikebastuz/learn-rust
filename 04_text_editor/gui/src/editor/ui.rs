@@ -41,7 +41,7 @@ impl eframe::App for EditorApp {
                 ui.menu_button("File", |ui| {
                     if ui.button("Save").clicked() {
                         self.content.save();
-                        self.notification.replace(Some(String::from("Saved")));
+                        // self.notification.replace(Some(String::from("Saved!")));
                         ui.close_menu();
                     }
                     if ui.button("Exit").clicked() {
