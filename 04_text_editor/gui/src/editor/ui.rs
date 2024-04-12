@@ -7,7 +7,7 @@ use std::rc::Rc;
 pub type SharedActiveFilePath = Rc<RefCell<Option<String>>>;
 pub type SharedNotification = Rc<RefCell<Option<String>>>;
 
-pub const FILE_TREE_WIDTH: f32 = 200.;
+pub const FILE_TREE_WIDTH: f32 = 300.;
 
 pub struct EditorApp {
     notification: SharedNotification,
@@ -49,7 +49,7 @@ impl eframe::App for EditorApp {
                 });
             });
 
-            ui.horizontal(|ui| {
+            ui.horizontal_top(|ui| {
                 ui.columns(2, |cols| {
                     cols[0].vertical(|ui| {
                         ui.set_width(FILE_TREE_WIDTH);

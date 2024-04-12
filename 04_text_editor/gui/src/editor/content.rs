@@ -1,6 +1,8 @@
-use eframe::egui::Ui;
+use eframe::egui::{ScrollArea, TextEdit, TextStyle, Ui};
+use egui_extras::syntax_highlighting;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 
 use super::ui::{SharedActiveFilePath, SharedNotification};
 
@@ -26,7 +28,31 @@ impl Content {
             Some(fp) => {
                 let fp_str = fp.as_str();
                 if let Some(content) = self.file_contents.get_mut(fp_str) {
-                    ui.text_edit_multiline(content);
+                    let language = Path::new(fp_str)
+                        .extension()
+                        .and_then(|ext| ext.to_str())
+                        .unwrap_or("txt");
+
+                    let theme = syntax_highlighting::CodeTheme::from_memory(ui.ctx());
+
+                    let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
+                        let mut layout_job =
+                            syntax_highlighting::highlight(ui.ctx(), &theme, string, language);
+                        layout_job.wrap.max_width = wrap_width;
+                        ui.fonts(|f| f.layout_job(layout_job))
+                    };
+
+                    ScrollArea::vertical().show(ui, |ui| {
+                        ui.add(
+                            TextEdit::multiline(content)
+                                .font(TextStyle::Monospace)
+                                .code_editor()
+                                .desired_rows(10)
+                                .lock_focus(true)
+                                .desired_width(f32::INFINITY)
+                                .layouter(&mut layouter),
+                        );
+                    });
                 } else {
                     let contents = fs::read_to_string(fp_str).unwrap_or_else(|err| {
                         if err.kind() == std::io::ErrorKind::NotFound {
