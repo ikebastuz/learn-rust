@@ -34,3 +34,21 @@ pub fn move_hero(
 
     hero_transform.translation.x = new_hero_position.clamp(left_bound, right_bound);
 }
+
+pub fn spawn_hero(commands: &mut Commands) {
+    commands.spawn((
+        SpriteBundle {
+            transform: Transform {
+                translation: Vec3::new(0.0, -280.0, 0.0),
+                scale: HERO_SIZE,
+                ..default()
+            },
+            sprite: Sprite {
+                color: HERO_COLOR,
+                ..default()
+            },
+            ..default()
+        },
+        Hero,
+    ));
+}

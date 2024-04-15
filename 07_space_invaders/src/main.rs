@@ -1,38 +1,20 @@
 use bevy::prelude::*;
 
+mod enemy;
 mod hero;
 mod walls;
-use hero::{move_hero, Hero, HERO_COLOR, HERO_SIZE};
-use walls::{WallBundle, WallLocation};
+use enemy::spawn_initial_enemies;
+use hero::{move_hero, spawn_hero};
+use walls::spawn_walls;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 
-    let hero_y = -280.0;
-
-    commands.spawn((
-        SpriteBundle {
-            transform: Transform {
-                translation: Vec3::new(0.0, hero_y, 0.0),
-                scale: HERO_SIZE,
-                ..default()
-            },
-            sprite: Sprite {
-                color: HERO_COLOR,
-                ..default()
-            },
-            ..default()
-        },
-        Hero,
-    ));
-
-    // Walls
-    commands.spawn(WallBundle::new(WallLocation::Left));
-    commands.spawn(WallBundle::new(WallLocation::Right));
-    commands.spawn(WallBundle::new(WallLocation::Bottom));
-    commands.spawn(WallBundle::new(WallLocation::Top));
+    spawn_hero(&mut commands);
+    spawn_walls(&mut commands);
+    spawn_initial_enemies(&mut commands);
 }
 
 fn main() {
