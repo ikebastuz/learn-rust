@@ -3,7 +3,7 @@ use bevy::prelude::*;
 mod enemy;
 mod hero;
 mod walls;
-use enemy::spawn_initial_enemies;
+use enemy::{move_enemies, spawn_initial_enemies};
 use hero::{move_hero, spawn_hero};
 use walls::spawn_walls;
 
@@ -28,6 +28,6 @@ fn main() {
         }))
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_systems(Startup, setup)
-        .add_systems(FixedUpdate, (move_hero).chain())
+        .add_systems(FixedUpdate, (move_hero, move_enemies).chain())
         .run();
 }
