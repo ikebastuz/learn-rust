@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::projectiles::{HERO_SHOOTING_INTERVAL, PROJECTILE_SIZE};
 use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
 const HERO_SPEED: f32 = 500.0;
@@ -7,8 +8,15 @@ pub const HERO_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
 const HERO_PADDING: f32 = 0.0;
 pub const HERO_COLOR: Color = Color::rgb(0.3, 0.3, 0.7);
 
+pub struct ShootingTimer(pub Timer);
+
 #[derive(Component)]
-pub struct Hero;
+pub struct Hero {
+    pub shooting_timer: ShootingTimer,
+}
+
+#[derive(Component)]
+pub struct HeroProjectile;
 
 pub fn move_hero(
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -49,6 +57,11 @@ pub fn spawn_hero(commands: &mut Commands) {
             },
             ..default()
         },
-        Hero,
+        Hero {
+            shooting_timer: ShootingTimer(Timer::from_seconds(
+                HERO_SHOOTING_INTERVAL,
+                TimerMode::Repeating,
+            )),
+        },
     ));
 }
