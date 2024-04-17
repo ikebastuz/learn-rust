@@ -1,4 +1,5 @@
 use crate::{
+    enemy::{Enemy, ENEMY_SIZE},
     hero::{Hero, HeroProjectile},
     walls::{TOP_WALL, WALL_THICKNESS},
 };
@@ -46,6 +47,47 @@ pub fn move_projectiles(
 
         if transform.translation.y >= TOP_WALL - WALL_THICKNESS / 2.0 {
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn collides(object_vector: &Vec3, projectile_vector: &Vec3, object_size: Vec3) -> bool {
+    let object_left = object_vector.x - object_size.x / 2.0;
+    let object_right = object_vector.x + object_size.x / 2.0;
+    let object_top = object_vector.y + object_size.y / 2.0;
+    let object_bottom = object_vector.y - object_size.y / 2.0;
+
+    let projectile_left = projectile_vector.x - PROJECTILE_SIZE.x / 2.0;
+    let projectile_right = projectile_vector.x + PROJECTILE_SIZE.x / 2.0;
+    let projectile_top = projectile_vector.y + PROJECTILE_SIZE.y / 2.0;
+    let projectile_bottom = projectile_vector.y - PROJECTILE_SIZE.y / 2.0;
+
+    if projectile_right >= object_left
+        && projectile_left <= object_right
+        && projectile_top >= object_bottom
+        && projectile_bottom <= object_top
+    {
+        true
+    } else {
+        false
+    }
+}
+
+pub fn check_for_collisions(
+    mut commands: Commands,
+    hero_projectile_query: Query<(Entity, &Transform), With<HeroProjectile>>,
+    enemy_query: Query<(Entity, &Transform), With<Enemy>>,
+) {
+    for (hero_projectile_entity, hero_projectile_transform) in hero_projectile_query.iter() {
+        for (enemy_entity, enemy_transform) in enemy_query.iter() {
+            if collides(
+                &enemy_transform.translation,
+                &hero_projectile_transform.translation,
+                ENEMY_SIZE,
+            ) {
+                commands.entity(enemy_entity).despawn();
+                commands.entity(hero_projectile_entity).despawn();
+            }
         }
     }
 }
