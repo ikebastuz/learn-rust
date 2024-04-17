@@ -5,7 +5,7 @@ mod hero;
 mod projectiles;
 mod walls;
 use enemy::{move_enemies, spawn_initial_enemies};
-use hero::{move_hero, spawn_hero};
+use hero::{level_up, move_hero, spawn_hero};
 use projectiles::{check_for_collisions, move_projectiles, shoot_hero};
 use walls::spawn_walls;
 
@@ -38,6 +38,7 @@ fn main() {
                 shoot_hero,
                 move_projectiles,
                 check_for_collisions,
+                level_up,
             )
                 .chain(),
         )

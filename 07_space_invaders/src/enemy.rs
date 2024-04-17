@@ -5,17 +5,17 @@ use crate::walls::{LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 
 pub const ENEMY_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
 pub const ENEMY_COLOR: Color = Color::rgb(1.0, 0.0, 0.0);
-const ENEMY_ROW_GAP: f32 = 20.0;
+pub const ENEMY_ROW_GAP: f32 = 20.0;
 const ENEMIES_PER_ROW: usize = 10;
 const ENEMY_ROW_MOVE_SPACES: usize = 2;
 const INITIAL_ENEMY_ROWS: usize = 3;
-const ENEMY_MOVE_DISTANCE: f32 = 1.0;
 const TEMP_DEBUG_OFFSET: f32 = 40.0;
 
 #[derive(Component)]
 pub struct Enemy {
     direction: f32,
-    row_index: usize,
+    pub row_index: usize,
+    pub speed: f32,
 }
 
 impl Enemy {
@@ -23,6 +23,7 @@ impl Enemy {
         Self {
             direction: 1.0,
             row_index,
+            speed: 1.0,
         }
     }
 }
@@ -69,7 +70,7 @@ pub fn move_enemies(mut query: Query<(&mut Transform, &mut Enemy)>) {
 
     // Update enemy positions and track row positions
     for (mut transform, enemy) in &mut query.iter_mut() {
-        transform.translation.x += enemy.direction * ENEMY_MOVE_DISTANCE;
+        transform.translation.x += enemy.direction * enemy.speed;
 
         let (rightmost, leftmost) = row_positions
             .entry(enemy.row_index)

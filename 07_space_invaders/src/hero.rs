@@ -1,18 +1,23 @@
 use bevy::prelude::*;
 
-use crate::projectiles::{HERO_SHOOTING_INTERVAL, PROJECTILE_SIZE};
+use crate::enemy::{Enemy, ENEMY_ROW_GAP, ENEMY_SIZE};
+use crate::projectiles::HERO_SHOOTING_INTERVAL;
 use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
 const HERO_SPEED: f32 = 500.0;
 pub const HERO_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
 const HERO_PADDING: f32 = 0.0;
 pub const HERO_COLOR: Color = Color::rgb(0.3, 0.3, 0.7);
+const LEVEL_UP_TIMER: f32 = 5.0;
+const LEVEL_UP_SPEED_MULTIPLIER: f32 = 1.2;
 
 pub struct ShootingTimer(pub Timer);
+pub struct LevelupTimer(Timer);
 
 #[derive(Component)]
 pub struct Hero {
     pub shooting_timer: ShootingTimer,
+    pub levelup_timer: LevelupTimer,
 }
 
 #[derive(Component)]
@@ -62,6 +67,27 @@ pub fn spawn_hero(commands: &mut Commands) {
                 HERO_SHOOTING_INTERVAL,
                 TimerMode::Repeating,
             )),
+            levelup_timer: LevelupTimer(Timer::from_seconds(LEVEL_UP_TIMER, TimerMode::Repeating)),
         },
     ));
+}
+
+pub fn level_up(
+    time: Res<Time>,
+    mut hero_query: Query<&mut Hero>,
+    mut enemy_query: Query<(&mut Transform, &mut Enemy)>,
+) {
+    for mut hero in &mut hero_query.iter_mut() {
+        hero.levelup_timer.0.tick(time.delta());
+        if hero.levelup_timer.0.finished() {
+            println!("levelup");
+
+            for (mut transform, mut enemy) in &mut enemy_query.iter_mut() {
+                enemy.speed *= LEVEL_UP_SPEED_MULTIPLIER;
+
+                transform.translation.y -= ENEMY_SIZE.y + ENEMY_ROW_GAP;
+                enemy.row_index += 1;
+            }
+        }
+    }
 }

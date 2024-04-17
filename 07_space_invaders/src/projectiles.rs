@@ -62,15 +62,10 @@ fn collides(object_vector: &Vec3, projectile_vector: &Vec3, object_size: Vec3) -
     let projectile_top = projectile_vector.y + PROJECTILE_SIZE.y / 2.0;
     let projectile_bottom = projectile_vector.y - PROJECTILE_SIZE.y / 2.0;
 
-    if projectile_right >= object_left
+    return projectile_right >= object_left
         && projectile_left <= object_right
         && projectile_top >= object_bottom
-        && projectile_bottom <= object_top
-    {
-        true
-    } else {
-        false
-    }
+        && projectile_bottom <= object_top;
 }
 
 pub fn check_for_collisions(
