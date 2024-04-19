@@ -6,7 +6,7 @@ mod projectiles;
 mod walls;
 use enemy::{move_enemies, spawn_initial_enemies};
 use hero::{level_up, move_hero, spawn_hero};
-use projectiles::{check_for_collisions, move_projectiles, shoot_hero};
+use projectiles::{check_for_collisions, move_projectiles, shoot_enemy, shoot_hero};
 use walls::spawn_walls;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
@@ -36,6 +36,7 @@ fn main() {
                 move_hero,
                 move_enemies,
                 shoot_hero,
+                shoot_enemy,
                 move_projectiles,
                 check_for_collisions,
                 level_up,

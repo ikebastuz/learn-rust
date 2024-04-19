@@ -20,6 +20,9 @@ pub struct Enemy {
     pub speed: f32,
 }
 
+#[derive(Component)]
+pub struct EnemyProjectile;
+
 impl Enemy {
     fn build(row_index: usize, speed: f32) -> Self {
         Self {

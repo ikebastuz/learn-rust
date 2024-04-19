@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::enemy::{spawn_row, Enemy, ENEMY_INITIAL_SPEED, ENEMY_ROW_GAP};
-use crate::projectiles::HERO_SHOOTING_INTERVAL;
+use crate::projectiles::{ENEMY_SHOOTING_INTERVAL, HERO_SHOOTING_INTERVAL};
 use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
 const HERO_SPEED: f32 = 500.0;
@@ -11,12 +11,14 @@ pub const HERO_COLOR: Color = Color::rgb(0.3, 0.3, 0.7);
 const LEVEL_UP_TIMER: f32 = 5.0;
 pub const LEVEL_UP_SPEED_MULTIPLIER: f32 = 1.2;
 
-pub struct ShootingTimer(pub Timer);
+pub struct HeroShootingTimer(pub Timer);
+pub struct EnemyShootingTimer(pub Timer);
 pub struct LevelupTimer(Timer);
 
 #[derive(Component)]
 pub struct Hero {
-    pub shooting_timer: ShootingTimer,
+    pub hero_shooting_timer: HeroShootingTimer,
+    pub enemy_shooting_timer: EnemyShootingTimer,
     pub levelup_timer: LevelupTimer,
 }
 
@@ -63,8 +65,12 @@ pub fn spawn_hero(commands: &mut Commands) {
             ..default()
         },
         Hero {
-            shooting_timer: ShootingTimer(Timer::from_seconds(
+            hero_shooting_timer: HeroShootingTimer(Timer::from_seconds(
                 HERO_SHOOTING_INTERVAL,
+                TimerMode::Repeating,
+            )),
+            enemy_shooting_timer: EnemyShootingTimer(Timer::from_seconds(
+                ENEMY_SHOOTING_INTERVAL,
                 TimerMode::Repeating,
             )),
             levelup_timer: LevelupTimer(Timer::from_seconds(LEVEL_UP_TIMER, TimerMode::Repeating)),
