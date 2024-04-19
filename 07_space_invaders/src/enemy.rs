@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 
+use crate::hero::LEVEL_UP_SPEED_MULTIPLIER;
 use crate::walls::{LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 
 pub const ENEMY_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
@@ -10,6 +11,7 @@ const ENEMIES_PER_ROW: usize = 10;
 const ENEMY_ROW_MOVE_SPACES: usize = 2;
 const INITIAL_ENEMY_ROWS: usize = 3;
 const TEMP_DEBUG_OFFSET: f32 = 40.0;
+pub const ENEMY_INITIAL_SPEED: f32 = 1.0;
 
 #[derive(Component)]
 pub struct Enemy {
@@ -19,16 +21,22 @@ pub struct Enemy {
 }
 
 impl Enemy {
-    fn build(row_index: usize) -> Self {
+    fn build(row_index: usize, speed: f32) -> Self {
         Self {
             direction: 1.0,
             row_index,
-            speed: 1.0,
+            speed,
         }
+    }
+
+    pub fn level_up(&mut self, transform: &mut Transform) {
+        self.speed *= LEVEL_UP_SPEED_MULTIPLIER;
+        self.row_index += 1;
+        transform.translation.y -= ENEMY_SIZE.y + ENEMY_ROW_GAP;
     }
 }
 
-pub fn spawn_row(commands: &mut Commands, row_index: usize) {
+pub fn spawn_row(commands: &mut Commands, row_index: usize, speed: f32) {
     let enemy_y = TOP_WALL - (row_index + 1) as f32 * (ENEMY_SIZE.y + ENEMY_ROW_GAP as f32);
     let enemy_x_gap = (RIGHT_WALL - LEFT_WALL) as f32
         / (ENEMIES_PER_ROW + ENEMY_ROW_MOVE_SPACES) as f32
@@ -54,14 +62,14 @@ pub fn spawn_row(commands: &mut Commands, row_index: usize) {
                 },
                 ..default()
             },
-            Enemy::build(row_index),
+            Enemy::build(row_index, speed),
         ));
     }
 }
 
 pub fn spawn_initial_enemies(commands: &mut Commands) {
     for y in 0..INITIAL_ENEMY_ROWS {
-        spawn_row(commands, y);
+        spawn_row(commands, y, ENEMY_INITIAL_SPEED);
     }
 }
 
