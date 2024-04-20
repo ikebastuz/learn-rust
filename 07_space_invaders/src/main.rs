@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 
 mod enemy;
+mod game;
 mod hero;
 mod projectiles;
 mod walls;
-use enemy::{move_enemies, spawn_initial_enemies};
-use hero::{level_up, move_hero, spawn_hero};
+use enemy::move_enemies;
+use game::start;
+use hero::{level_up, move_hero};
 use projectiles::{check_for_collisions, move_projectiles, shoot_enemy, shoot_hero};
 use walls::spawn_walls;
 
@@ -13,10 +15,9 @@ const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-
-    spawn_hero(&mut commands);
     spawn_walls(&mut commands);
-    spawn_initial_enemies(&mut commands);
+
+    start(commands);
 }
 
 fn main() {

@@ -1,3 +1,4 @@
+use crate::game::{start, stop, AllEntitiesQuery};
 use crate::{
     enemy::{Enemy, EnemyProjectile, ENEMY_SIZE},
     hero::{Hero, HeroProjectile, HERO_SIZE},
@@ -102,7 +103,7 @@ pub fn move_projectiles(
     }
 }
 
-fn collides(object_vector: &Vec3, projectile_vector: &Vec3, object_size: Vec3) -> bool {
+fn collides(object_vector: &Vec3, projectile_vector: &Vec3, object_size: &Vec3) -> bool {
     let object_left = object_vector.x - object_size.x / 2.0;
     let object_right = object_vector.x + object_size.x / 2.0;
     let object_top = object_vector.y + object_size.y / 2.0;
@@ -122,32 +123,38 @@ fn collides(object_vector: &Vec3, projectile_vector: &Vec3, object_size: Vec3) -
 pub fn check_for_collisions(
     mut commands: Commands,
     hero_projectile_query: Query<(Entity, &Transform), With<HeroProjectile>>,
-    enemy_projectile_query: Query<(Entity, &Transform), With<EnemyProjectile>>,
-    hero_query: Query<(Entity, &Transform), With<Hero>>,
+    enemy_projectile_query: Query<&Transform, With<EnemyProjectile>>,
+    hero_query: Query<&Transform, With<Hero>>,
     enemy_query: Query<(Entity, &Transform), With<Enemy>>,
+    mut all_query: AllEntitiesQuery,
 ) {
-    for (hero_projectile_entity, hero_projectile_transform) in hero_projectile_query.iter() {
-        for (enemy_entity, enemy_transform) in enemy_query.iter() {
-            if collides(
-                &enemy_transform.translation,
-                &hero_projectile_transform.translation,
-                ENEMY_SIZE,
-            ) {
-                commands.entity(enemy_entity).despawn();
-                commands.entity(hero_projectile_entity).despawn();
-            }
-        }
-    }
+    let mut game_over: bool = false;
 
-    for (enemy_projectile_entity, enemy_projectile_transform) in enemy_projectile_query.iter() {
-        for (hero_entity, hero_transform) in hero_query.iter() {
+    for enemy_projectile_transform in enemy_projectile_query.iter() {
+        for hero_transform in hero_query.iter() {
             if collides(
                 &hero_transform.translation,
                 &enemy_projectile_transform.translation,
-                HERO_SIZE,
+                &HERO_SIZE,
             ) {
-                commands.entity(hero_entity).despawn();
-                commands.entity(enemy_projectile_entity).despawn();
+                game_over = true;
+            }
+        }
+    }
+    if game_over {
+        stop(&mut commands, &mut all_query);
+        start(commands);
+    } else {
+        for (hero_projectile_entity, hero_projectile_transform) in hero_projectile_query.iter() {
+            for (enemy_entity, enemy_transform) in enemy_query.iter() {
+                if collides(
+                    &enemy_transform.translation,
+                    &hero_projectile_transform.translation,
+                    &ENEMY_SIZE,
+                ) {
+                    commands.entity(enemy_entity).despawn();
+                    commands.entity(hero_projectile_entity).despawn();
+                }
             }
         }
     }

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::enemy::{spawn_row, Enemy, ENEMY_INITIAL_SPEED, ENEMY_ROW_GAP};
+use crate::enemy::{spawn_row, Enemy, ENEMY_INITIAL_SPEED};
 use crate::projectiles::{ENEMY_SHOOTING_INTERVAL, HERO_SHOOTING_INTERVAL};
 use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
