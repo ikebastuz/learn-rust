@@ -1,4 +1,5 @@
 use crate::game::{start, stop, AllEntitiesQuery};
+use crate::stats::ScoreText;
 use crate::{
     enemy::{Enemy, EnemyProjectile, ENEMY_SIZE},
     hero::{Hero, HeroProjectile, HERO_SIZE},
@@ -126,6 +127,8 @@ pub fn check_for_collisions(
     enemy_projectile_query: Query<&Transform, With<EnemyProjectile>>,
     hero_query: Query<&Transform, With<Hero>>,
     enemy_query: Query<(Entity, &Transform), With<Enemy>>,
+    mut score_query: Query<(&mut ScoreText, &mut Text)>,
+    // mut score_query: Query<&mut ScoreText>,
     mut all_query: AllEntitiesQuery,
 ) {
     let mut game_over: bool = false;
@@ -142,6 +145,12 @@ pub fn check_for_collisions(
         }
     }
     if game_over {
+        for (mut score, mut text) in score_query.iter_mut() {
+            let final_score: usize = score.score;
+            text.sections[0].value = format!("Final score: ");
+            text.sections[1].value = format!("{final_score:.0}");
+            score.score = 0;
+        }
         stop(&mut commands, &mut all_query);
         start(commands);
     } else {
@@ -154,6 +163,13 @@ pub fn check_for_collisions(
                 ) {
                     commands.entity(enemy_entity).despawn();
                     commands.entity(hero_projectile_entity).despawn();
+
+                    for (mut score, mut text) in score_query.iter_mut() {
+                        let new_score: usize = score.score + 1;
+                        score.score = new_score;
+                        text.sections[0].value = format!("Score: ");
+                        text.sections[1].value = format!("{new_score:.0}");
+                    }
                 }
             }
         }
