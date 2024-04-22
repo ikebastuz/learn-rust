@@ -1,14 +1,17 @@
 use bevy::prelude::*;
 
 use crate::enemy::{spawn_row, Enemy, ENEMY_INITIAL_SPEED};
+use crate::game::{start, stop, AllEntitiesQuery};
 use crate::projectiles::{ENEMY_SHOOTING_INTERVAL, HERO_SHOOTING_INTERVAL};
+use crate::stats::{print_final_score, ScoreText};
 use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
+use std::cmp::max;
 
 const HERO_SPEED: f32 = 500.0;
 pub const HERO_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
 const HERO_PADDING: f32 = 0.0;
 pub const HERO_COLOR: Color = Color::rgb(0.3, 0.3, 0.7);
-const LEVEL_UP_TIMER: f32 = 5.0;
+const LEVEL_UP_TIMER: f32 = 1.0;
 pub const LEVEL_UP_SPEED_MULTIPLIER: f32 = 1.2;
 
 pub struct HeroShootingTimer(pub Timer);
@@ -83,16 +86,27 @@ pub fn level_up(
     mut commands: Commands,
     mut hero_query: Query<&mut Hero>,
     mut enemy_query: Query<(&mut Transform, &mut Enemy)>,
+    mut score_query: Query<(&mut ScoreText, &mut Text)>,
+    mut all_query: AllEntitiesQuery,
 ) {
     for mut hero in &mut hero_query.iter_mut() {
         hero.levelup_timer.0.tick(time.delta());
         if hero.levelup_timer.0.finished() {
             let mut speed = ENEMY_INITIAL_SPEED;
+            let mut current_level = 0;
             for (mut transform, mut enemy) in &mut enemy_query.iter_mut() {
                 enemy.level_up(&mut transform);
                 speed = enemy.speed;
+                current_level = max(current_level, enemy.row_index);
             }
-            spawn_row(&mut commands, 0, speed);
+
+            if current_level >= 10 {
+                print_final_score(&mut score_query);
+                stop(&mut commands, &mut all_query);
+                start(&mut commands);
+            } else {
+                spawn_row(&mut commands, 0, speed);
+            }
         }
     }
 }

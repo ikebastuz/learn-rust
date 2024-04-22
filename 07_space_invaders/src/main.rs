@@ -20,7 +20,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_walls(&mut commands);
     setup_stats(&mut commands, asset_server);
 
-    start(commands);
+    start(&mut commands);
 }
 
 fn main() {

@@ -15,9 +15,9 @@ pub type AllEntitiesQuery<'a, 'b> = Query<
     )>,
 >;
 
-pub fn start(mut commands: Commands) {
-    spawn_hero(&mut commands);
-    spawn_initial_enemies(&mut commands);
+pub fn start(commands: &mut Commands) {
+    spawn_hero(commands);
+    spawn_initial_enemies(commands);
 }
 
 pub fn stop(commands: &mut Commands, query: &mut AllEntitiesQuery) {

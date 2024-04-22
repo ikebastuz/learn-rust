@@ -1,3 +1,4 @@
+use crate::game::{start, stop, AllEntitiesQuery};
 use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -74,5 +75,14 @@ pub fn update_stats(
                 text.sections[1].value = format!("{value:.0}");
             }
         }
+    }
+}
+
+pub fn print_final_score(score_query: &mut Query<(&mut ScoreText, &mut Text)>) {
+    for (mut score, mut text) in score_query.iter_mut() {
+        let final_score: usize = score.score;
+        text.sections[0].value = format!("Final score: ");
+        text.sections[1].value = format!("{final_score:.0}");
+        score.score = 0;
     }
 }
