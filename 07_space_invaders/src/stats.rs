@@ -12,13 +12,13 @@ pub struct ScoreText {
     pub score: usize,
 }
 
-pub fn setup_stats(commands: &mut Commands, asset_server: Res<AssetServer>) {
+pub fn setup_stats(commands: &mut Commands, font: &Handle<Font>) {
     commands.spawn((
         TextBundle::from_sections([
             TextSection::new(
                 "FPS: ",
                 TextStyle {
-                    font: asset_server.load("fonts/Roboto-Regular.ttf"),
+                    font: font.clone(),
                     font_size: 30.0,
                     ..default()
                 },
@@ -40,7 +40,7 @@ pub fn setup_stats(commands: &mut Commands, asset_server: Res<AssetServer>) {
             TextSection::new(
                 "Score: ",
                 TextStyle {
-                    font: asset_server.load("fonts/Roboto-Regular.ttf"),
+                    font: font.clone(),
                     font_size: 30.0,
                     ..default()
                 },
