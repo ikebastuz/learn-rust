@@ -4,14 +4,13 @@ use crate::enemy::{spawn_row, Enemy, ENEMY_INITIAL_SPEED};
 use crate::game::{start, stop, AllEntitiesQuery};
 use crate::projectiles::{ENEMY_SHOOTING_INTERVAL, HERO_SHOOTING_INTERVAL};
 use crate::stats::{print_final_score, ScoreText};
-use crate::store::Store;
+use crate::store::{AnimationIndices, Store};
 use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 use std::cmp::max;
 
 const HERO_SPEED: f32 = 500.0;
-pub const HERO_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
+pub const HERO_SIZE: Vec3 = Vec3::new(32.0, 16.0, 0.0);
 const HERO_PADDING: f32 = 0.0;
-pub const HERO_COLOR: Color = Color::rgb(0.3, 0.3, 0.7);
 const LEVEL_UP_TIMER: f32 = 10.0;
 pub const LEVEL_UP_SPEED_MULTIPLIER: f32 = 1.2;
 
@@ -54,16 +53,19 @@ pub fn move_hero(
     hero_transform.translation.x = new_hero_position.clamp(left_bound, right_bound);
 }
 
-pub fn spawn_hero(commands: &mut Commands) {
+pub fn spawn_hero(commands: &mut Commands, store: &ResMut<Store>) {
+    let ai = AnimationIndices { first: 0, last: 0 };
+
     commands.spawn((
-        SpriteBundle {
+        SpriteSheetBundle {
+            texture: store.sprite.clone(),
+            atlas: TextureAtlas {
+                layout: store.layout_hero.clone(),
+                index: ai.first,
+            },
             transform: Transform {
                 translation: Vec3::new(0.0, -280.0, 0.0),
-                scale: HERO_SIZE,
-                ..default()
-            },
-            sprite: Sprite {
-                color: HERO_COLOR,
+                scale: Vec3::splat(2.0),
                 ..default()
             },
             ..default()

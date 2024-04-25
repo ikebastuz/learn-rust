@@ -4,8 +4,10 @@ use bevy::prelude::*;
 pub struct Store {
     pub font: Handle<Font>,
     pub sprite: Handle<Image>,
-    pub layout: Handle<TextureAtlasLayout>,
-    pub animation_indices: AnimationIndices,
+    pub layout_enemy_1: Handle<TextureAtlasLayout>,
+    pub layout_enemy_2: Handle<TextureAtlasLayout>,
+    pub layout_enemy_3: Handle<TextureAtlasLayout>,
+    pub layout_hero: Handle<TextureAtlasLayout>,
 }
 
 #[derive(Component, Clone)]

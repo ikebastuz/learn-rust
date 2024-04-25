@@ -17,7 +17,7 @@ pub type AllEntitiesQuery<'a, 'b> = Query<
 >;
 
 pub fn start(commands: &mut Commands, store: &ResMut<Store>) {
-    spawn_hero(commands);
+    spawn_hero(commands, &store);
     spawn_initial_enemies(commands, &store);
 }
 

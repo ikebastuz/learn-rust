@@ -12,10 +12,12 @@ use game::start;
 use hero::{level_up, move_hero};
 use projectiles::{check_for_collisions, move_projectiles, shoot_enemy, shoot_hero};
 use stats::{setup_stats, update_stats};
-use store::{AnimationTimer, Store};
+use store::Store;
 use walls::spawn_walls;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
+const ASSET_TILE_SIZE: Vec2 = Vec2::new(16.0, 8.0);
+const ASSET_TILE_PADDING: Option<Vec2> = Some(Vec2::new(2.0, 2.0));
 
 fn setup(
     mut commands: Commands,
@@ -23,14 +25,38 @@ fn setup(
     mut store: ResMut<Store>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let layout = TextureAtlasLayout::from_grid(
-        Vec2::new(16.0, 8.0),
+    let layout_enemy_1 = TextureAtlasLayout::from_grid(
+        ASSET_TILE_SIZE,
         1,
         2,
-        Some(Vec2::new(2.0, 2.0)),
+        ASSET_TILE_PADDING,
         Some(Vec2::new(1.0, 1.0)),
     );
-    store.layout = texture_atlas_layouts.add(layout);
+    let layout_enemy_2 = TextureAtlasLayout::from_grid(
+        ASSET_TILE_SIZE,
+        1,
+        2,
+        ASSET_TILE_PADDING,
+        Some(Vec2::new(19.0, 1.0)),
+    );
+    let layout_enemy_3 = TextureAtlasLayout::from_grid(
+        ASSET_TILE_SIZE,
+        1,
+        2,
+        ASSET_TILE_PADDING,
+        Some(Vec2::new(37.0, 1.0)),
+    );
+    let layout_hero = TextureAtlasLayout::from_grid(
+        ASSET_TILE_SIZE,
+        1,
+        1,
+        ASSET_TILE_PADDING,
+        Some(Vec2::new(1.0, 49.0)),
+    );
+    store.layout_enemy_1 = texture_atlas_layouts.add(layout_enemy_1);
+    store.layout_enemy_2 = texture_atlas_layouts.add(layout_enemy_2);
+    store.layout_enemy_3 = texture_atlas_layouts.add(layout_enemy_3);
+    store.layout_hero = texture_atlas_layouts.add(layout_hero);
     store.font = asset_server.load("fonts/Roboto-Regular.ttf");
     store.sprite = asset_server.load("sprites.png");
 

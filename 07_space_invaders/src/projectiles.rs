@@ -85,10 +85,16 @@ pub fn shoot_enemy(
 
 pub fn move_projectiles(
     mut commands: Commands,
+    enemies: Query<&Enemy>,
     mut hero_query: Query<(Entity, &mut Transform, &mut HeroProjectile), Without<EnemyProjectile>>,
     mut enemy_query: Query<(Entity, &mut Transform, &mut EnemyProjectile), Without<HeroProjectile>>,
     time: Res<Time>,
 ) {
+    let mut speed_multiplier = 1.0;
+    for enemy in enemies.iter() {
+        speed_multiplier = enemy.speed;
+    }
+
     for (entity, mut transform, _projectile) in &mut hero_query.iter_mut() {
         transform.translation.y += PROJECTILE_SPEED * time.delta_seconds();
 
@@ -97,7 +103,7 @@ pub fn move_projectiles(
         }
     }
     for (entity, mut transform, _projectile) in &mut enemy_query.iter_mut() {
-        transform.translation.y -= PROJECTILE_SPEED * time.delta_seconds();
+        transform.translation.y -= PROJECTILE_SPEED * speed_multiplier * time.delta_seconds();
 
         if transform.translation.y <= BOTTOM_WALL + WALL_THICKNESS / 2.0 {
             commands.entity(entity).despawn();

@@ -1,12 +1,12 @@
 use bevy::prelude::*;
+use rand::Rng;
 use std::collections::HashMap;
 
 use crate::hero::LEVEL_UP_SPEED_MULTIPLIER;
 use crate::store::{AnimationIndices, AnimationTimer, Store};
 use crate::walls::{LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 
-pub const ENEMY_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
-pub const ENEMY_COLOR: Color = Color::rgb(1.0, 0.0, 0.0);
+pub const ENEMY_SIZE: Vec3 = Vec3::new(32.0, 16.0, 0.0);
 pub const ENEMY_ROW_GAP: f32 = 20.0;
 const ENEMIES_PER_ROW: usize = 10;
 const ENEMY_ROW_MOVE_SPACES: usize = 2;
@@ -46,13 +46,26 @@ pub fn spawn_row(commands: &mut Commands, row_index: usize, speed: f32, store: &
         / (ENEMIES_PER_ROW + ENEMY_ROW_MOVE_SPACES) as f32
         - ENEMY_SIZE.x;
 
+    let mut rng = rand::thread_rng();
+    let random_number = rng.gen_range(1..=3);
+
+    let layout = if random_number == 1 {
+        store.layout_enemy_1.clone()
+    } else if random_number == 2 {
+        store.layout_enemy_2.clone()
+    } else {
+        store.layout_enemy_3.clone()
+    };
+
     for x in 0..ENEMIES_PER_ROW {
+        let ai = AnimationIndices { first: 0, last: 1 };
+
         commands.spawn((
             SpriteSheetBundle {
                 texture: store.sprite.clone(),
                 atlas: TextureAtlas {
-                    layout: store.layout.clone(),
-                    index: store.animation_indices.first,
+                    layout: layout.clone(),
+                    index: ai.first,
                 },
                 transform: Transform {
                     translation: Vec3::new(
@@ -62,13 +75,12 @@ pub fn spawn_row(commands: &mut Commands, row_index: usize, speed: f32, store: &
                         enemy_y,
                         0.0,
                     ),
-                    // scale: ENEMY_SIZE,
-                    scale: Vec3::splat(3.0),
+                    scale: Vec3::splat(2.0),
                     ..default()
                 },
                 ..default()
             },
-            store.animation_indices.clone(),
+            ai,
             AnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
             Enemy::build(row_index, speed),
         ));
