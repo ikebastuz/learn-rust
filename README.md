@@ -1,4 +1,4 @@
-## Rust ROADMAP
+# Rust ROADMAP
 This is my playground as I journey through learning Rust.
 
 ## Contents
