@@ -3,6 +3,7 @@ use crate::stats::{print_final_score, ScoreText};
 use crate::{
     enemy::{Enemy, EnemyProjectile, ENEMY_SIZE},
     hero::{Hero, HeroProjectile, HERO_SIZE},
+    store::Store,
     walls::{BOTTOM_WALL, TOP_WALL, WALL_THICKNESS},
 };
 use bevy::prelude::*;
@@ -129,6 +130,7 @@ pub fn check_for_collisions(
     enemy_query: Query<(Entity, &Transform), With<Enemy>>,
     mut score_query: Query<(&mut ScoreText, &mut Text)>,
     mut all_query: AllEntitiesQuery,
+    store: ResMut<Store>,
 ) {
     let mut game_over: bool = false;
 
@@ -146,7 +148,7 @@ pub fn check_for_collisions(
     if game_over {
         print_final_score(&mut score_query);
         stop(&mut commands, &mut all_query);
-        start(&mut commands);
+        start(&mut commands, &store);
     } else {
         for (hero_projectile_entity, hero_projectile_transform) in hero_projectile_query.iter() {
             for (enemy_entity, enemy_transform) in enemy_query.iter() {

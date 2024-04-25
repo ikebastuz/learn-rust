@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::enemy::{spawn_initial_enemies, Enemy, EnemyProjectile};
 use crate::hero::{spawn_hero, Hero, HeroProjectile};
+use crate::store::Store;
 
 pub type AllEntitiesQuery<'a, 'b> = Query<
     'a,
@@ -15,9 +16,9 @@ pub type AllEntitiesQuery<'a, 'b> = Query<
     )>,
 >;
 
-pub fn start(commands: &mut Commands) {
+pub fn start(commands: &mut Commands, store: &ResMut<Store>) {
     spawn_hero(commands);
-    spawn_initial_enemies(commands);
+    spawn_initial_enemies(commands, &store);
 }
 
 pub fn stop(commands: &mut Commands, query: &mut AllEntitiesQuery) {

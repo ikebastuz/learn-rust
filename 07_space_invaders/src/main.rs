@@ -7,18 +7,15 @@ mod projectiles;
 mod stats;
 mod store;
 mod walls;
-use enemy::move_enemies;
+use enemy::{animate_sprite, move_enemies};
 use game::start;
 use hero::{level_up, move_hero};
 use projectiles::{check_for_collisions, move_projectiles, shoot_enemy, shoot_hero};
 use stats::{setup_stats, update_stats};
-use store::Store;
+use store::{AnimationTimer, Store};
 use walls::spawn_walls;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
-
-#[derive(Component, Deref, DerefMut)]
-struct AnimationTimer(Timer);
 
 fn setup(
     mut commands: Commands,
@@ -26,7 +23,13 @@ fn setup(
     mut store: ResMut<Store>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let layout = TextureAtlasLayout::from_grid(Vec2::new(24.0, 24.0), 7, 1, None, None);
+    let layout = TextureAtlasLayout::from_grid(
+        Vec2::new(16.0, 8.0),
+        1,
+        2,
+        Some(Vec2::new(2.0, 2.0)),
+        Some(Vec2::new(1.0, 1.0)),
+    );
     store.layout = texture_atlas_layouts.add(layout);
     store.font = asset_server.load("fonts/Roboto-Regular.ttf");
     store.sprite = asset_server.load("sprites.png");
@@ -35,7 +38,7 @@ fn setup(
     spawn_walls(&mut commands);
     setup_stats(&mut commands, &store.font);
 
-    start(&mut commands);
+    start(&mut commands, &store);
 }
 
 fn main() {
@@ -64,6 +67,7 @@ fn main() {
                 move_projectiles,
                 check_for_collisions,
                 level_up,
+                animate_sprite,
             )
                 .chain(),
         )

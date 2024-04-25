@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 
 use crate::hero::LEVEL_UP_SPEED_MULTIPLIER;
+use crate::store::{AnimationIndices, AnimationTimer, Store};
 use crate::walls::{LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 
 pub const ENEMY_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
@@ -39,7 +40,7 @@ impl Enemy {
     }
 }
 
-pub fn spawn_row(commands: &mut Commands, row_index: usize, speed: f32) {
+pub fn spawn_row(commands: &mut Commands, row_index: usize, speed: f32, store: &ResMut<Store>) {
     let enemy_y = TOP_WALL - (row_index + 1) as f32 * (ENEMY_SIZE.y + ENEMY_ROW_GAP as f32);
     let enemy_x_gap = (RIGHT_WALL - LEFT_WALL) as f32
         / (ENEMIES_PER_ROW + ENEMY_ROW_MOVE_SPACES) as f32
@@ -47,7 +48,12 @@ pub fn spawn_row(commands: &mut Commands, row_index: usize, speed: f32) {
 
     for x in 0..ENEMIES_PER_ROW {
         commands.spawn((
-            SpriteBundle {
+            SpriteSheetBundle {
+                texture: store.sprite.clone(),
+                atlas: TextureAtlas {
+                    layout: store.layout.clone(),
+                    index: store.animation_indices.first,
+                },
                 transform: Transform {
                     translation: Vec3::new(
                         LEFT_WALL
@@ -56,27 +62,26 @@ pub fn spawn_row(commands: &mut Commands, row_index: usize, speed: f32) {
                         enemy_y,
                         0.0,
                     ),
-                    scale: ENEMY_SIZE,
-                    ..default()
-                },
-                sprite: Sprite {
-                    color: ENEMY_COLOR,
+                    // scale: ENEMY_SIZE,
+                    scale: Vec3::splat(3.0),
                     ..default()
                 },
                 ..default()
             },
+            store.animation_indices.clone(),
+            AnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
             Enemy::build(row_index, speed),
         ));
     }
 }
 
-pub fn spawn_initial_enemies(commands: &mut Commands) {
+pub fn spawn_initial_enemies(commands: &mut Commands, store: &ResMut<Store>) {
     for y in 0..INITIAL_ENEMY_ROWS {
-        spawn_row(commands, y, ENEMY_INITIAL_SPEED);
+        spawn_row(commands, y, ENEMY_INITIAL_SPEED, &store);
     }
 }
 
-pub fn move_enemies(mut query: Query<(&mut Transform, &mut Enemy)>) {
+pub fn move_enemies(mut query: Query<(&mut Transform, &mut Enemy)>, store: Res<Store>) {
     let mut row_positions: HashMap<usize, (f32, f32)> = HashMap::new();
 
     // Update enemy positions and track row positions
@@ -107,6 +112,22 @@ pub fn move_enemies(mut query: Query<(&mut Transform, &mut Enemy)>) {
             .map(|(t, e)| (t, e))
         {
             enemy.direction = direction;
+        }
+    }
+}
+
+pub fn animate_sprite(
+    time: Res<Time>,
+    mut query: Query<(&AnimationIndices, &mut AnimationTimer, &mut TextureAtlas)>,
+) {
+    for (indices, mut timer, mut atlas) in &mut query {
+        timer.tick(time.delta());
+        if timer.just_finished() {
+            atlas.index = if atlas.index == indices.last {
+                indices.first
+            } else {
+                atlas.index + 1
+            };
         }
     }
 }

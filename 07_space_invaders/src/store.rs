@@ -5,20 +5,20 @@ pub struct Store {
     pub font: Handle<Font>,
     pub sprite: Handle<Image>,
     pub layout: Handle<TextureAtlasLayout>,
-    animation_indices: AnimationIndices,
+    pub animation_indices: AnimationIndices,
 }
 
-#[derive(Component)]
-struct AnimationIndices {
-    first: usize,
-    last: usize,
+#[derive(Component, Clone)]
+pub struct AnimationIndices {
+    pub first: usize,
+    pub last: usize,
 }
 
 impl Default for AnimationIndices {
     fn default() -> Self {
-        AnimationIndices { first: 1, last: 2 }
+        AnimationIndices { first: 0, last: 1 }
     }
 }
 
 #[derive(Component, Deref, DerefMut)]
-struct AnimationTimer(Timer);
+pub struct AnimationTimer(pub Timer);
