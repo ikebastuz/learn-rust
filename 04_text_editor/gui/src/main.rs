@@ -10,7 +10,7 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
     eframe::run_native(
-        "ikeEditor!!!",
+        "ikeEditor",
         options,
         Box::new(|_cc| Box::<EditorApp>::default()),
     )
