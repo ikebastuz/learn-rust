@@ -3,6 +3,7 @@ use crate::Folder;
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 
 const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
+const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
 const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
 const TEXT_COLOR: Color = tailwind::SLATE.c200;
 
@@ -36,8 +37,7 @@ fn render_list(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
             .fg(TEXT_COLOR)
             .bg(NORMAL_ROW_COLOR);
 
-        let items: Vec<String> = folder.files.clone();
-        let items = List::new(items)
+        let items = List::new(folder_to_list(&folder))
             .block(block)
             .highlight_style(
                 Style::default()
@@ -52,7 +52,35 @@ fn render_list(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
 }
 
 fn render_footer(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("\nUse ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom.")
+    Paragraph::new("\nUse ↓↑ to move")
         .centered()
         .render(area, buf);
+}
+
+fn folder_to_list(folder: &Folder) -> Vec<ListItem> {
+    let file_items = folder.files.clone();
+    let folder_items = folder.folders.clone();
+
+    let items: Vec<String> = vec![&vec![String::from("..")], &folder_items, &file_items]
+        .into_iter()
+        .flat_map(|v| v.iter().cloned())
+        .collect();
+
+    items
+        .iter()
+        .enumerate()
+        .map(|(index, item)| to_list_item(item.to_string(), folder.index, index))
+        .collect()
+}
+
+fn to_list_item<'a>(item: String, active_index: usize, current_index: usize) -> ListItem<'a> {
+    let (text, bg_color) = if current_index == active_index {
+        (format!(" > {}", item), ALT_ROW_COLOR)
+    } else {
+        (format!("   {}", item), NORMAL_ROW_COLOR)
+    };
+
+    let line = Line::styled(text, TEXT_COLOR);
+
+    ListItem::new(line).bg(bg_color)
 }

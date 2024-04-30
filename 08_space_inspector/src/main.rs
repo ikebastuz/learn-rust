@@ -1,7 +1,6 @@
-use color_eyre::config::HookBuilder;
 use space_inspector::App;
 use std::error::Error;
-use std::io::{self, stdout};
+use std::io::stdout;
 
 use crossterm::{
     event::{self, Event, KeyCode},

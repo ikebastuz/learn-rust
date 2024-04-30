@@ -45,8 +45,8 @@ impl App {
                     use KeyCode::*;
                     match key.code {
                         Char('q') | Esc => return Ok(()),
-                        Char('j') | Down => self.todo(),
-                        Char('k') | Up => self.todo(),
+                        Char('j') | Down => self.todo_down(),
+                        Char('k') | Up => self.todo_up(),
                         _ => {}
                     }
                 }
@@ -54,8 +54,22 @@ impl App {
         }
     }
 
-    fn todo(&mut self) {
-        println!("TODO:");
+    fn todo_up(&mut self) {
+        if let Some(mut folder) = self.get_current_dir_list().cloned() {
+            if folder.index > 0 {
+                folder.index -= 1;
+                self.file_tree_map.insert(self.current_path.clone(), folder);
+            }
+        }
+    }
+
+    fn todo_down(&mut self) {
+        if let Some(mut folder) = self.get_current_dir_list().cloned() {
+            if folder.index < folder.files.len() + folder.folders.len() {
+                folder.index += 1;
+                self.file_tree_map.insert(self.current_path.clone(), folder);
+            }
+        }
     }
 
     fn get_current_dir_list(&self) -> Option<&Folder> {

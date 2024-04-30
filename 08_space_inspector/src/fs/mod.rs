@@ -1,8 +1,9 @@
 use std::fs::read_dir;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Folder {
+    pub index: usize,
     pub files: Vec<String>,
     pub folders: Vec<String>,
 }
@@ -10,6 +11,7 @@ pub struct Folder {
 impl Folder {
     pub fn new() -> Self {
         Folder {
+            index: 0,
             files: Vec::new(),
             folders: Vec::new(),
         }
@@ -32,6 +34,9 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
             }
         }
     }
+
+    folder.files.sort();
+    folder.folders.sort();
 
     folder
 }
