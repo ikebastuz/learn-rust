@@ -12,6 +12,7 @@ use fs::{path_to_folder, Folder};
 
 #[derive(Debug)]
 pub struct App {
+    current_path: String,
     file_tree_map: HashMap<String, Folder>,
 }
 
@@ -21,9 +22,13 @@ impl App {
         let initial_folder = path_to_folder(&cd);
 
         let mut file_tree_map = HashMap::new();
-        file_tree_map.insert(cd.to_string_lossy().into_owned(), initial_folder);
+        let current_path = cd.to_string_lossy().into_owned();
+        file_tree_map.insert(current_path.clone(), initial_folder);
 
-        App { file_tree_map }
+        App {
+            file_tree_map,
+            current_path,
+        }
     }
 
     fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
@@ -51,5 +56,9 @@ impl App {
 
     fn todo(&mut self) {
         println!("TODO:");
+    }
+
+    fn get_current_dir_list(&self) -> Option<&Folder> {
+        self.file_tree_map.get(&self.current_path)
     }
 }
