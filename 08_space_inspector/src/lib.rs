@@ -19,16 +19,24 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         let cd = current_dir().unwrap();
-        let initial_folder = path_to_folder(&cd);
+        let current_path = cd.to_string_lossy().into_owned();
 
         let mut file_tree_map = HashMap::new();
-        let current_path = cd.to_string_lossy().into_owned();
-        file_tree_map.insert(current_path.clone(), initial_folder);
+        App::populate_file_tree(&mut file_tree_map);
 
         App {
             file_tree_map,
             current_path,
         }
+    }
+
+    fn populate_file_tree(file_tree: &mut HashMap<String, Folder>) {
+        let cd = current_dir().unwrap();
+        let current_path = cd.to_string_lossy().into_owned();
+
+        let initial_folder = path_to_folder(&cd);
+
+        file_tree.insert(current_path.clone(), initial_folder);
     }
 
     fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {

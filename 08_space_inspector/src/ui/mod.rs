@@ -8,6 +8,12 @@ const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
 const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
 const TEXT_COLOR: Color = tailwind::SLATE.c200;
 
+// Texts
+pub const TEXT_UNKNOWN: &str = "N/A";
+pub const TEXT_PARENT_DIR: &str = "..";
+const TEXT_TITLE: &str = "Space inspector";
+const TEXT_HINT: &str = "\nUse ↓↑ to move | \"q\" to exit";
+
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let vertical = Layout::vertical([
@@ -18,17 +24,23 @@ impl Widget for &mut App {
         let [header_area, rest_area, footer_area] = vertical.areas(area);
 
         let maybe_folder = self.get_current_dir_list();
-        render_title(header_area, buf);
+
+        render_title(header_area, buf, maybe_folder);
         render_list(rest_area, buf, maybe_folder);
         render_footer(footer_area, buf);
     }
 }
 
-fn render_title(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("Space inspector")
+fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
+    if let Some(folder) = maybe_folder {
+        Paragraph::new(format!(
+            "{} | {} | {}",
+            TEXT_TITLE, folder.title, folder.total_size
+        ))
         .bold()
         .centered()
         .render(area, buf);
+    }
 }
 
 fn render_list(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
@@ -46,16 +58,20 @@ fn render_list(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
                     .add_modifier(Modifier::REVERSED)
                     .fg(SELECTED_STYLE_FG),
             )
-            .highlight_symbol(">")
+            .highlight_symbol(">>> ")
             .highlight_spacing(HighlightSpacing::Always);
-        StatefulWidget::render(items, area, buf, &mut ListState::default());
+
+        StatefulWidget::render(
+            items,
+            area,
+            buf,
+            &mut ListState::default().with_selected(Some(folder.cursor_index)),
+        );
     }
 }
 
 fn render_footer(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("\nUse ↓↑ to move | \"q\" to exit")
-        .centered()
-        .render(area, buf);
+    Paragraph::new(TEXT_HINT).centered().render(area, buf);
 }
 
 fn folder_to_list(folder: &Folder) -> Vec<ListItem> {
@@ -64,7 +80,7 @@ fn folder_to_list(folder: &Folder) -> Vec<ListItem> {
 
     let items: Vec<FolderEntry> = vec![
         &vec![FolderEntry {
-            title: String::from(".."),
+            title: String::from(TEXT_PARENT_DIR),
             size: None,
         }],
         &folder_items,
@@ -74,31 +90,15 @@ fn folder_to_list(folder: &Folder) -> Vec<ListItem> {
     .flat_map(|v| v.iter().cloned())
     .collect();
 
-    items
-        .iter()
-        .enumerate()
-        .map(|(index, item)| to_list_item(&item, folder.cursor_index, index))
-        .collect()
+    items.iter().map(|item| to_list_item(&item)).collect()
 }
 
-fn to_list_item<'a>(item: &FolderEntry, active_index: usize, current_index: usize) -> ListItem<'a> {
+fn to_list_item<'a>(item: &FolderEntry) -> ListItem<'a> {
     let item_size = match item.size {
         Some(size) => format!("{}", size),
-        None => "N/A".to_string(),
-    };
-    let (text, bg_color) = if current_index == active_index {
-        (
-            format!(" > {}  |  {}", item.title, item_size),
-            ALT_ROW_COLOR,
-        )
-    } else {
-        (
-            format!("   {}  |  {}", item.title, item_size),
-            NORMAL_ROW_COLOR,
-        )
+        None => TEXT_UNKNOWN.to_string(),
     };
 
-    let line = Line::styled(text, TEXT_COLOR);
-
-    ListItem::new(line).bg(bg_color)
+    let line = Line::styled(format!("{}  |  {}", item.title, item_size), TEXT_COLOR);
+    ListItem::new(line).bg(NORMAL_ROW_COLOR)
 }
