@@ -49,7 +49,6 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
         if let Ok(entry) = entry {
             let file_name = entry.file_name();
             if let Some(file_name) = file_name.to_str() {
-                println!("FN: {}", file_name);
                 let mut folder_entry = FolderEntry {
                     title: file_name.to_owned(),
                     size: None,

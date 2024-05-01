@@ -4,7 +4,6 @@ use crate::Folder;
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 
 const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
-const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
 const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
 const TEXT_COLOR: Color = tailwind::SLATE.c200;
 
@@ -35,7 +34,9 @@ fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
     if let Some(folder) = maybe_folder {
         Paragraph::new(format!(
             "{} | {} | {}",
-            TEXT_TITLE, folder.title, folder.total_size
+            TEXT_TITLE,
+            folder.title,
+            format_file_size(folder.total_size)
         ))
         .bold()
         .centered()
@@ -95,10 +96,29 @@ fn folder_to_list(folder: &Folder) -> Vec<ListItem> {
 
 fn to_list_item<'a>(item: &FolderEntry) -> ListItem<'a> {
     let item_size = match item.size {
-        Some(size) => format!("{}", size),
+        Some(size) => format!("{}", format_file_size(size)),
         None => TEXT_UNKNOWN.to_string(),
     };
 
     let line = Line::styled(format!("{}  |  {}", item.title, item_size), TEXT_COLOR);
     ListItem::new(line).bg(NORMAL_ROW_COLOR)
+}
+
+fn format_file_size(size: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+    const TB: u64 = GB * 1024;
+
+    if size >= TB {
+        format!("{:.2} TB", size as f64 / TB as f64)
+    } else if size >= GB {
+        format!("{:.2} GB", size as f64 / GB as f64)
+    } else if size >= MB {
+        format!("{:.2} MB", size as f64 / MB as f64)
+    } else if size >= KB {
+        format!("{:.2} KB", size as f64 / KB as f64)
+    } else {
+        format!("{} bytes", size)
+    }
 }
