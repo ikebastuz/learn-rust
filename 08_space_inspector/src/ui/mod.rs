@@ -1,3 +1,4 @@
+use crate::fs::FolderEntry;
 use crate::App;
 use crate::Folder;
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
@@ -33,7 +34,7 @@ fn render_title(area: Rect, buf: &mut Buffer) {
 fn render_list(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
     if let Some(folder) = maybe_folder {
         let block = Block::default()
-            .borders(Borders::NONE)
+            .borders(Borders::ALL)
             .fg(TEXT_COLOR)
             .bg(NORMAL_ROW_COLOR);
 
@@ -52,7 +53,7 @@ fn render_list(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
 }
 
 fn render_footer(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("\nUse ↓↑ to move")
+    Paragraph::new("\nUse ↓↑ to move | \"q\" to exit")
         .centered()
         .render(area, buf);
 }
@@ -61,23 +62,40 @@ fn folder_to_list(folder: &Folder) -> Vec<ListItem> {
     let file_items = folder.files.clone();
     let folder_items = folder.folders.clone();
 
-    let items: Vec<String> = vec![&vec![String::from("..")], &folder_items, &file_items]
-        .into_iter()
-        .flat_map(|v| v.iter().cloned())
-        .collect();
+    let items: Vec<FolderEntry> = vec![
+        &vec![FolderEntry {
+            title: String::from(".."),
+            size: None,
+        }],
+        &folder_items,
+        &file_items,
+    ]
+    .into_iter()
+    .flat_map(|v| v.iter().cloned())
+    .collect();
 
     items
         .iter()
         .enumerate()
-        .map(|(index, item)| to_list_item(item.to_string(), folder.index, index))
+        .map(|(index, item)| to_list_item(&item, folder.cursor_index, index))
         .collect()
 }
 
-fn to_list_item<'a>(item: String, active_index: usize, current_index: usize) -> ListItem<'a> {
+fn to_list_item<'a>(item: &FolderEntry, active_index: usize, current_index: usize) -> ListItem<'a> {
+    let item_size = match item.size {
+        Some(size) => format!("{}", size),
+        None => "N/A".to_string(),
+    };
     let (text, bg_color) = if current_index == active_index {
-        (format!(" > {}", item), ALT_ROW_COLOR)
+        (
+            format!(" > {}  |  {}", item.title, item_size),
+            ALT_ROW_COLOR,
+        )
     } else {
-        (format!("   {}", item), NORMAL_ROW_COLOR)
+        (
+            format!("   {}  |  {}", item.title, item_size),
+            NORMAL_ROW_COLOR,
+        )
     };
 
     let line = Line::styled(text, TEXT_COLOR);

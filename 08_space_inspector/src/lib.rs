@@ -56,8 +56,8 @@ impl App {
 
     fn todo_up(&mut self) {
         if let Some(mut folder) = self.get_current_dir_list().cloned() {
-            if folder.index > 0 {
-                folder.index -= 1;
+            if folder.cursor_index > 0 {
+                folder.cursor_index -= 1;
                 self.file_tree_map.insert(self.current_path.clone(), folder);
             }
         }
@@ -65,8 +65,8 @@ impl App {
 
     fn todo_down(&mut self) {
         if let Some(mut folder) = self.get_current_dir_list().cloned() {
-            if folder.index < folder.files.len() + folder.folders.len() {
-                folder.index += 1;
+            if folder.cursor_index < folder.files.len() + folder.folders.len() {
+                folder.cursor_index += 1;
                 self.file_tree_map.insert(self.current_path.clone(), folder);
             }
         }
