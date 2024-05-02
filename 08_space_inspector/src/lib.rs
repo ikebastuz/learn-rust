@@ -109,6 +109,7 @@ impl App {
             let selected_index = folder.cursor_index;
 
             if selected_index == 0 {
+                // ..
                 return;
             }
 
@@ -124,6 +125,7 @@ impl App {
                         folder.folders.remove(selected_index - 1);
                         let path_string = new_path.to_string_lossy().into_owned();
                         self.file_tree_map.remove(&path_string);
+                        self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
                     return;
                 }
@@ -143,6 +145,7 @@ impl App {
                         folder
                             .files
                             .remove(selected_index - folder.folders.len() - 1);
+                        self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
                     return;
                 }
