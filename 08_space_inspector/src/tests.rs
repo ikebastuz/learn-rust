@@ -154,6 +154,18 @@ mollit anim id est laborum.",
             )
         }
 
+        /// - folder_1
+        ///     - folder_2
+        ///         - folder_3
+        ///         - file_1
+        ///         - file_2
+        ///         - file_3
+        ///     - file_1
+        ///     - file_2
+        ///     - file_3
+        /// - file_1
+        /// - file_2
+        /// - file_3
         fn create_testing_files() {
             fs::create_dir_all(TEST_FILE_PATH_EDIT).expect("Failed to create test folder");
 
@@ -275,12 +287,20 @@ mollit anim id est laborum.",
 
             let folder_1_upd = app.get_current_dir_list().unwrap();
             assert_eq!(folder_1_upd.total_size, (TEST_FILE_SIZE * 5) as u64);
+            assert_eq!(
+                folder_1_upd.get_selected_folder_size(),
+                (TEST_FILE_SIZE * 2) as u64
+            );
 
             app.cursor_up();
             app.enter_pressed();
 
             let root_entry_upd = app.get_current_dir_list().unwrap();
             assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 8) as u64);
+            assert_eq!(
+                root_entry_upd.get_selected_folder_size(),
+                (TEST_FILE_SIZE * 5) as u64
+            );
 
             cleanup_testing_files();
         }
@@ -310,6 +330,10 @@ mollit anim id est laborum.",
 
             let root_entry_upd = app.get_current_dir_list().unwrap();
             assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 6) as u64);
+            assert_eq!(
+                root_entry_upd.get_selected_folder_size(),
+                (TEST_FILE_SIZE * 3) as u64
+            );
 
             cleanup_testing_files();
         }

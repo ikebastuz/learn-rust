@@ -9,7 +9,7 @@ use std::env;
 mod fs;
 mod ui;
 
-use fs::{delete_file, delete_folder, process_filepath, Folder};
+use fs::{delete_file, delete_folder, process_filepath, Folder, FolderEntryType};
 
 #[derive(Debug)]
 pub struct App {
@@ -91,81 +91,100 @@ impl App {
 
     fn delete_pressed(&mut self) {
         if let Some(mut folder) = self.get_current_dir_list().cloned() {
-            let selected_index = folder.cursor_index;
+            let folder_entry_type = folder.get_selected_entry_type();
+            match folder_entry_type {
+                FolderEntryType::Parent => return,
+                FolderEntryType::Folder => {
+                    if let Some(subfolder) = folder.get_selected_folder() {
+                        let mut new_path = PathBuf::from(&self.current_path);
+                        new_path.push(&subfolder.title);
 
-            if selected_index == 0 {
-                // ..
-                return;
-            }
-
-            if selected_index > 0 && selected_index <= folder.folders.len() {
-                if let Some(subfolder) = folder.folders.get(selected_index - 1) {
-                    let mut new_path = PathBuf::from(&self.current_path);
-                    new_path.push(&subfolder.title);
-
-                    if let Ok(_) = delete_folder(&new_path) {
-                        if let Some(subfolder_size) = subfolder.size {
-                            if subfolder_size > folder.total_size {
-                                folder.total_size = 0;
-                            } else {
-                                folder.total_size -= subfolder_size;
-                            }
-
-                            // Reduce the size of the deleted folder from all parent folders
-                            let mut parent_path = new_path.clone();
-                            while let Some(parent) = parent_path.parent() {
-                                if let Some(parent_folder) =
-                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
-                                {
-                                    parent_folder.total_size -= subfolder_size;
-                                    parent_path = parent.to_path_buf();
+                        if let Ok(_) = delete_folder(&new_path) {
+                            if let Some(subfolder_size) = subfolder.size {
+                                if subfolder_size > folder.total_size {
+                                    folder.total_size = 0;
                                 } else {
-                                    break; // Stop if the parent folder doesn't exist in the file tree map
+                                    folder.total_size -= subfolder_size;
+                                }
+
+                                // Reduce the size of the deleted folder from all parent folders
+                                let mut parent_path = new_path.clone();
+                                while let Some(parent) = parent_path.parent() {
+                                    if let Some(parent_folder) =
+                                        self.file_tree_map.get_mut(parent.to_str().unwrap())
+                                    {
+                                        parent_folder.total_size -= subfolder_size;
+                                        if let Some(parent_folder_entry) = parent_folder
+                                            .folders
+                                            .get_mut(parent_folder.cursor_index)
+                                        {
+                                            if let Some(size) = parent_folder_entry.size.as_mut() {
+                                                *size -= subfolder_size;
+                                            }
+                                        }
+                                        parent_path = parent.to_path_buf();
+                                    } else {
+                                        break; // Stop if the parent folder doesn't exist in the file tree map
+                                    }
                                 }
                             }
+                            folder.remove_selected_folder();
+                            let path_string = new_path.to_string_lossy().into_owned();
+                            self.file_tree_map.remove(&path_string);
+                            self.file_tree_map.insert(self.current_path.clone(), folder);
                         }
-                        folder.folders.remove(selected_index - 1);
-                        let path_string = new_path.to_string_lossy().into_owned();
-                        self.file_tree_map.remove(&path_string);
-                        self.file_tree_map.insert(self.current_path.clone(), folder);
+                        return;
                     }
                     return;
                 }
-            }
+                FolderEntryType::File => {
+                    if let Some(subfile) = folder
+                        .files
+                        .get(folder.cursor_index - folder.folders.len() - 1)
+                    {
+                        let mut new_path = PathBuf::from(&self.current_path);
+                        new_path.push(&subfile.title);
 
-            if selected_index > folder.folders.len()
-                && selected_index <= folder.folders.len() + folder.files.len()
-            {
-                if let Some(subfile) = folder.files.get(selected_index - folder.folders.len() - 1) {
-                    let mut new_path = PathBuf::from(&self.current_path);
-                    new_path.push(&subfile.title);
-
-                    if let Ok(_) = delete_file(&new_path) {
-                        if let Some(subfile_size) = subfile.size {
-                            if subfile_size > folder.total_size {
-                                folder.total_size = 0;
-                            } else {
-                                folder.total_size -= subfile_size;
-                            }
-
-                            // Reduce the size of the deleted file from all parent folders
-                            let mut parent_path = new_path.clone();
-                            while let Some(parent) = parent_path.parent() {
-                                if let Some(parent_folder) =
-                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
-                                {
-                                    parent_folder.total_size -= subfile_size;
-                                    parent_path = parent.to_path_buf();
+                        if let Ok(_) = delete_file(&new_path) {
+                            if let Some(subfile_size) = subfile.size {
+                                if subfile_size > folder.total_size {
+                                    folder.total_size = 0;
                                 } else {
-                                    break;
+                                    folder.total_size -= subfile_size;
+                                }
+
+                                // Reduce the size of the deleted file from all parent folders
+                                let mut parent_path = new_path.clone();
+                                while let Some(parent) = parent_path.parent() {
+                                    if let Some(parent_folder) =
+                                        self.file_tree_map.get_mut(parent.to_str().unwrap())
+                                    {
+                                        parent_folder.total_size -= subfile_size;
+                                        if let Some(parent_folder_entry) = parent_folder
+                                            .folders
+                                            .get_mut(parent_folder.cursor_index)
+                                        {
+                                            if let Some(size) = parent_folder_entry.size.as_mut() {
+                                                *size -= subfile_size;
+                                            }
+                                        }
+                                        parent_path = parent.to_path_buf();
+                                    } else {
+                                        break;
+                                    }
                                 }
                             }
+                            folder
+                                .files
+                                .remove(folder.cursor_index - folder.folders.len() - 1);
+                            self.file_tree_map.insert(self.current_path.clone(), folder);
                         }
-                        folder
-                            .files
-                            .remove(selected_index - folder.folders.len() - 1);
-                        self.file_tree_map.insert(self.current_path.clone(), folder);
+                        return;
                     }
+
+                    return;
+                }
+                FolderEntryType::Unknown => {
                     return;
                 }
             }

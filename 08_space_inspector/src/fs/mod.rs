@@ -27,6 +27,13 @@ pub struct Folder {
     pub folders: Vec<FolderEntry>,
 }
 
+pub enum FolderEntryType {
+    Parent,
+    File,
+    Folder,
+    Unknown,
+}
+
 impl Folder {
     pub fn new(title: String) -> Self {
         Folder {
@@ -35,6 +42,37 @@ impl Folder {
             cursor_index: 0,
             files: Vec::new(),
             folders: Vec::new(),
+        }
+    }
+
+    pub fn get_selected_folder(&self) -> Option<&FolderEntry> {
+        self.folders.get(self.cursor_index - 1)
+    }
+
+    pub fn remove_selected_folder(&mut self) {
+        self.folders.remove(self.cursor_index - 1);
+    }
+
+    #[warn(dead_code)]
+    pub fn get_selected_folder_size(&self) -> u64 {
+        if let Some(folder) = self.get_selected_folder() {
+            folder.size.unwrap_or(0)
+        } else {
+            0
+        }
+    }
+
+    pub fn get_selected_entry_type(&self) -> FolderEntryType {
+        if self.cursor_index == 0 {
+            FolderEntryType::Parent
+        } else if self.cursor_index > 0 && self.cursor_index <= self.folders.len() {
+            FolderEntryType::Folder
+        } else if self.cursor_index > self.folders.len()
+            && self.cursor_index <= self.folders.len() + self.files.len()
+        {
+            FolderEntryType::File
+        } else {
+            FolderEntryType::Unknown
         }
     }
 
