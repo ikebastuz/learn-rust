@@ -157,7 +157,7 @@ impl App {
                                     parent_folder.total_size -= subfile_size;
                                     parent_path = parent.to_path_buf();
                                 } else {
-                                    break; // Stop if the parent folder doesn't exist in the file tree map
+                                    break;
                                 }
                             }
                         }

@@ -23,7 +23,7 @@ mod tests {
     }
 
     fn assert_delete_folder_state(app: &App) {
-        assert_eq!(app.get_current_dir_list().unwrap().files.len(), 2);
+        assert_eq!(app.get_current_dir_list().unwrap().files.len(), 3);
         assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 1);
     }
 
@@ -140,9 +140,7 @@ mod tests {
         use std::fs::{self, File};
         use std::io::Write;
 
-        const TEST_FOLDER_NAME: &str = "folder_for_delete";
-        const TEST_FILE_NAMES: [&str; 2] = ["file1_to_delete.txt", "file2_to_delete.txt"];
-        const TEST_FILE_SIZE: usize = 447;
+        const TEST_FILE_SIZE: usize = 446;
 
         fn generate_lorem_ipsum() -> String {
             String::from(
@@ -152,31 +150,33 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi \
 ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit \
 in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur \
 sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt \
-mollit anim id est laborum.
-",
+mollit anim id est laborum.",
             )
         }
 
-        fn cleanup_testing_files() {
-            let folder_path = format!("{}/{}", TEST_FILE_PATH_EDIT, TEST_FOLDER_NAME);
-            if let Err(err) = fs::remove_dir_all(&folder_path) {
-                eprintln!("Failed to remove test folder: {}", err);
+        fn create_testing_files() {
+            fs::create_dir_all(TEST_FILE_PATH_EDIT).expect("Failed to create test folder");
+
+            let mut folder_path = format!("{}", TEST_FILE_PATH_EDIT);
+
+            for folder_index in 1..4 {
+                for file_index in 1..4 {
+                    let file_name = format!("file_to_delete_{}.txt", file_index);
+                    let file_path = format!("{}/{}", folder_path, file_name);
+                    let mut file = File::create(&file_path).expect("Failed to create test file");
+                    writeln!(file, "{}", generate_lorem_ipsum())
+                        .expect("Failed to write to test file");
+                }
+
+                folder_path = format!("{}/folder_to_delete_{}", folder_path, folder_index);
+
+                fs::create_dir_all(&folder_path).expect("Failed to create test folder");
             }
         }
 
-        fn create_testing_files() {
-            let folder_path = format!("{}", TEST_FILE_PATH_EDIT);
-            let sub_folder_path = format!("{}/{}", TEST_FILE_PATH_EDIT, TEST_FOLDER_NAME);
-            fs::create_dir_all(&sub_folder_path).expect("Failed to create test folder");
-
-            for file_name in &TEST_FILE_NAMES {
-                let file_path = format!("{}/{}", folder_path, file_name);
-                let mut file = File::create(&file_path).expect("Failed to create test file");
-                writeln!(file, "{}", generate_lorem_ipsum()).expect("Failed to write to test file");
-
-                let sub_file_path = format!("{}/{}", sub_folder_path, file_name);
-                let mut file = File::create(&sub_file_path).expect("Failed to create test file");
-                writeln!(file, "{}", generate_lorem_ipsum()).expect("Failed to write to test file");
+        fn cleanup_testing_files() {
+            if let Err(err) = fs::remove_dir_all(TEST_FILE_PATH_EDIT) {
+                eprintln!("Failed to remove test folder: {}", err);
             }
         }
 
@@ -206,7 +206,7 @@ mollit anim id est laborum.
             assert_delete_folder_state(&app);
             app.cursor_down();
             app.delete_pressed();
-            assert_eq!(app.get_current_dir_list().unwrap().files.len(), 2);
+            assert_eq!(app.get_current_dir_list().unwrap().files.len(), 3);
             assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 0);
             cleanup_testing_files();
         }
@@ -219,7 +219,7 @@ mollit anim id est laborum.
             app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
-            assert_eq!(app.get_current_dir_list().unwrap().files.len(), 1);
+            assert_eq!(app.get_current_dir_list().unwrap().files.len(), 2);
             assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 1);
             cleanup_testing_files();
         }
@@ -230,37 +230,93 @@ mollit anim id est laborum.
             let mut app = setup_app_edit();
 
             let root_entry = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 4) as u64);
+            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
 
             let root_entry_updated = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry_updated.total_size, (TEST_FILE_SIZE * 3) as u64);
+            assert_eq!(root_entry_updated.total_size, (TEST_FILE_SIZE * 8) as u64);
 
             cleanup_testing_files();
         }
 
         #[test]
-        fn updated_parent_folder_size() {
+        fn deleting_file_updates_parent_folders_sizes() {
             create_testing_files();
             let mut app = setup_app_edit();
 
             let root_entry = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 4) as u64);
+            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.enter_pressed();
+
+            let folder_1 = app.get_current_dir_list().unwrap();
+            assert_eq!(folder_1.total_size, (TEST_FILE_SIZE * 6) as u64);
+
+            app.cursor_down();
+            app.enter_pressed();
+
+            let folder_2 = app.get_current_dir_list().unwrap();
+            assert_eq!(folder_2.total_size, (TEST_FILE_SIZE * 3) as u64);
+
+            app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
+
+            let folder_2_upd = app.get_current_dir_list().unwrap();
+            assert_eq!(folder_2_upd.total_size, (TEST_FILE_SIZE * 2) as u64);
+
+            app.cursor_up();
             app.cursor_up();
             app.enter_pressed();
 
-            let root_entry_updated = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry_updated.total_size, (TEST_FILE_SIZE * 3) as u64);
+            let folder_1_upd = app.get_current_dir_list().unwrap();
+            assert_eq!(folder_1_upd.total_size, (TEST_FILE_SIZE * 5) as u64);
+
+            app.cursor_up();
+            app.enter_pressed();
+
+            let root_entry_upd = app.get_current_dir_list().unwrap();
+            assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 8) as u64);
 
             cleanup_testing_files();
         }
+
+        #[test]
+        fn deleting_folder_updates_parent_folders_sizes() {
+            create_testing_files();
+            let mut app = setup_app_edit();
+
+            let root_entry = app.get_current_dir_list().unwrap();
+            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 9) as u64);
+
+            app.cursor_down();
+            app.enter_pressed();
+
+            let folder_1 = app.get_current_dir_list().unwrap();
+            assert_eq!(folder_1.total_size, (TEST_FILE_SIZE * 6) as u64);
+
+            app.cursor_down();
+            app.delete_pressed();
+
+            let folder_1_upd = app.get_current_dir_list().unwrap();
+            assert_eq!(folder_1_upd.total_size, (TEST_FILE_SIZE * 3) as u64);
+
+            app.cursor_up();
+            app.enter_pressed();
+
+            let root_entry_upd = app.get_current_dir_list().unwrap();
+            assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 6) as u64);
+
+            cleanup_testing_files();
+        }
+
+        // #[test]
+        // fn qwe() {
+        //     create_testing_files();
+        // }
     }
 }
