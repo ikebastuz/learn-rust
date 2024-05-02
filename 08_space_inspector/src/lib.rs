@@ -9,7 +9,7 @@ use ratatui::prelude::*;
 mod fs;
 mod ui;
 
-use fs::{delete_file, delete_folder, path_to_folder, Folder};
+use fs::{delete_file, delete_folder, process_filepath, Folder};
 
 #[derive(Debug)]
 pub struct App {
@@ -24,37 +24,12 @@ impl App {
 
         let mut file_tree_map = HashMap::new();
 
-        App::process_filepath(&mut file_tree_map, &cd);
+        process_filepath(&mut file_tree_map, &cd);
 
         App {
             file_tree_map,
             current_path,
         }
-    }
-
-    fn process_filepath(file_tree: &mut HashMap<String, Folder>, path_buf: &PathBuf) -> u64 {
-        let path_string = path_buf.to_string_lossy().into_owned();
-
-        if let Some(folder) = file_tree.get(&path_string) {
-            return folder.total_size;
-        }
-
-        let mut folder = path_to_folder(path_buf);
-
-        for subfolder in folder.folders.iter_mut() {
-            let mut subfolder_path = path_buf.clone();
-            subfolder_path.push(&subfolder.title);
-
-            let subfolder_size = App::process_filepath(file_tree, &subfolder_path);
-            subfolder.size = Some(subfolder_size);
-            folder.total_size += subfolder_size;
-        }
-
-        let total_size = folder.total_size.clone();
-
-        file_tree.insert(path_string, folder);
-
-        total_size
     }
 
     fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
@@ -183,7 +158,7 @@ impl App {
 
     fn process_filepath_if_not_exist(&mut self) {
         if !self.file_tree_map.contains_key(&self.current_path) {
-            App::process_filepath(&mut self.file_tree_map, &PathBuf::from(&self.current_path));
+            process_filepath(&mut self.file_tree_map, &PathBuf::from(&self.current_path));
         }
     }
 }

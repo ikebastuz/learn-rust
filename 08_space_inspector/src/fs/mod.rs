@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fs::{read_dir, remove_dir_all, remove_file};
 use std::path::PathBuf;
 
@@ -114,4 +115,29 @@ pub fn delete_folder(path: &PathBuf) -> Result<(), std::io::Error> {
 
 pub fn delete_file(path: &PathBuf) -> Result<(), std::io::Error> {
     remove_file(path)
+}
+
+pub fn process_filepath(file_tree: &mut HashMap<String, Folder>, path_buf: &PathBuf) -> u64 {
+    let path_string = path_buf.to_string_lossy().into_owned();
+
+    if let Some(folder) = file_tree.get(&path_string) {
+        return folder.total_size;
+    }
+
+    let mut folder = path_to_folder(path_buf);
+
+    for subfolder in folder.folders.iter_mut() {
+        let mut subfolder_path = path_buf.clone();
+        subfolder_path.push(&subfolder.title);
+
+        let subfolder_size = process_filepath(file_tree, &subfolder_path);
+        subfolder.size = Some(subfolder_size);
+        folder.total_size += subfolder_size;
+    }
+
+    let total_size = folder.total_size.clone();
+
+    file_tree.insert(path_string, folder);
+
+    total_size
 }

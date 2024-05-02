@@ -6,6 +6,7 @@ const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
 const TEXT_COLOR: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_FG: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_BG: Color = tailwind::SLATE.c900;
+const TEXT_SELECTED_BG: Color = tailwind::SLATE.c700;
 const TABLE_SPACE_WIDTH: usize = 30;
 
 // Texts
@@ -53,6 +54,7 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
             .bg(NORMAL_ROW_COLOR);
 
         let header_style = Style::default().fg(TABLE_HEADER_FG).bg(TABLE_HEADER_BG);
+        let selected_style = Style::default().bg(TEXT_SELECTED_BG);
 
         let header = ["Name", "Size", "Space"]
             .into_iter()
@@ -74,6 +76,7 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
         .block(block)
         .header(header)
         .highlight_symbol(">>> ")
+        .highlight_style(selected_style)
         .highlight_spacing(HighlightSpacing::Always);
 
         StatefulWidget::render(
