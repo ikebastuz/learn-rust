@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::fs::read_dir;
+use std::fs::{read_dir, remove_dir_all, remove_file};
 use std::path::PathBuf;
 
 use crate::ui::{TEXT_PARENT_DIR, TEXT_UNKNOWN};
@@ -106,4 +106,12 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
     folder.folders.sort();
 
     folder
+}
+
+pub fn delete_folder(path: &PathBuf) -> Result<(), std::io::Error> {
+    remove_dir_all(path)
+}
+
+pub fn delete_file(path: &PathBuf) -> Result<(), std::io::Error> {
+    remove_file(path)
 }

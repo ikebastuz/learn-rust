@@ -9,7 +9,7 @@ use ratatui::prelude::*;
 mod fs;
 mod ui;
 
-use fs::{path_to_folder, Folder};
+use fs::{delete_file, delete_folder, path_to_folder, Folder};
 
 #[derive(Debug)]
 pub struct App {
@@ -73,6 +73,7 @@ impl App {
                         Char('q') | Esc => return Ok(()),
                         Char('j') | Down => self.cursor_down(),
                         Char('k') | Up => self.cursor_up(),
+                        Char('d') | Delete => self.delete_pressed(),
                         Enter => self.enter_pressed(),
                         _ => {}
                     }
@@ -101,6 +102,52 @@ impl App {
 
     fn get_current_dir_list(&self) -> Option<&Folder> {
         self.file_tree_map.get(&self.current_path)
+    }
+
+    fn delete_pressed(&mut self) {
+        if let Some(mut folder) = self.get_current_dir_list().cloned() {
+            let selected_index = folder.cursor_index;
+
+            if selected_index == 0 {
+                return;
+            }
+
+            if selected_index > 0 && selected_index <= folder.folders.len() {
+                if let Some(subfolder) = folder.folders.get(selected_index - 1) {
+                    let mut new_path = PathBuf::from(&self.current_path);
+                    new_path.push(&subfolder.title);
+
+                    if let Ok(_) = delete_folder(&new_path) {
+                        if let Some(subfolder_size) = subfolder.size {
+                            folder.total_size -= subfolder_size;
+                        }
+                        folder.folders.remove(selected_index - 1);
+                        let path_string = new_path.to_string_lossy().into_owned();
+                        self.file_tree_map.remove(&path_string);
+                    }
+                    return;
+                }
+            }
+
+            if selected_index > folder.folders.len()
+                && selected_index <= folder.folders.len() + folder.files.len()
+            {
+                if let Some(subfile) = folder.files.get(selected_index - folder.folders.len() - 1) {
+                    let mut new_path = PathBuf::from(&self.current_path);
+                    new_path.push(&subfile.title);
+
+                    if let Ok(_) = delete_file(&new_path) {
+                        if let Some(subfolder_size) = subfile.size {
+                            folder.total_size -= subfolder_size;
+                        }
+                        folder
+                            .files
+                            .remove(selected_index - folder.folders.len() - 1);
+                    }
+                    return;
+                }
+            }
+        }
     }
 
     fn enter_pressed(&mut self) {
