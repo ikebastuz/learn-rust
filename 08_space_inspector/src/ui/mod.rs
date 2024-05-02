@@ -3,10 +3,10 @@ use crate::Folder;
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 
 const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
-const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
 const TEXT_COLOR: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_FG: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_BG: Color = tailwind::SLATE.c900;
+const TABLE_SPACE_WIDTH: usize = 30;
 
 // Texts
 pub const TEXT_UNKNOWN: &str = "N/A";
@@ -53,9 +53,6 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
             .bg(NORMAL_ROW_COLOR);
 
         let header_style = Style::default().fg(TABLE_HEADER_FG).bg(TABLE_HEADER_BG);
-        let selected_style = Style::default()
-            .add_modifier(Modifier::REVERSED)
-            .fg(SELECTED_STYLE_FG);
 
         let header = ["Name", "Size", "Space"]
             .into_iter()
@@ -71,12 +68,11 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
             [
                 Constraint::Length(20),
                 Constraint::Length(20),
-                Constraint::Fill(1),
+                Constraint::Length(TABLE_SPACE_WIDTH as u16),
             ],
         )
         .block(block)
         .header(header)
-        .highlight_style(selected_style)
         .highlight_symbol(">>> ")
         .highlight_spacing(HighlightSpacing::Always);
 
@@ -90,15 +86,24 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
 }
 
 fn folder_to_rows(folder: &Folder) -> Vec<Row> {
-    let list = folder.to_list();
+    let max_entry_size = folder.get_max_entry_size();
 
-    list.iter()
+    folder
+        .to_list()
+        .iter()
         .map(|item| {
-            let item_size = match item.size {
-                Some(size) => format!("{}", format_file_size(size)),
-                None => TEXT_UNKNOWN.to_string(),
+            let (item_size, bar) = match item.size {
+                Some(size) => {
+                    let percent = (size * TABLE_SPACE_WIDTH as u64 / max_entry_size).div_euclid(1);
+                    let mut b = String::new();
+                    for _ in 0..percent {
+                        b.push('█');
+                    }
+                    (format!("{}", format_file_size(size)), b)
+                }
+                None => (TEXT_UNKNOWN.to_string(), " ".to_string()),
             };
-            Row::new(vec![item.title.clone(), item_size])
+            Row::new(vec![item.title.clone(), item_size, bar, ".".to_string()])
         })
         .collect()
 }

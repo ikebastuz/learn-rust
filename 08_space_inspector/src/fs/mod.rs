@@ -49,6 +49,27 @@ impl Folder {
         .flat_map(|v| v.iter().cloned())
         .collect()
     }
+
+    pub fn get_max_entry_size(&self) -> u64 {
+        let mut max_entry_size = 0;
+
+        for file in &self.files {
+            if let Some(size) = file.size {
+                if size > max_entry_size {
+                    max_entry_size = size
+                }
+            }
+        }
+        for folder in &self.folders {
+            if let Some(size) = folder.size {
+                if size > max_entry_size {
+                    max_entry_size = size
+                }
+            }
+        }
+
+        max_entry_size
+    }
 }
 
 pub fn path_to_folder(path: &PathBuf) -> Folder {
