@@ -7,6 +7,7 @@ use crate::ui::{TEXT_PARENT_DIR, TEXT_UNKNOWN};
 
 #[derive(Debug, Clone, PartialOrd, Eq, PartialEq)]
 pub struct FolderEntry {
+    pub is_folder: bool,
     pub title: String,
     pub size: Option<u64>,
 }
@@ -40,6 +41,7 @@ impl Folder {
     pub fn to_list(&self) -> Vec<FolderEntry> {
         vec![
             &vec![FolderEntry {
+                is_folder: true,
                 title: String::from(TEXT_PARENT_DIR),
                 size: None,
             }],
@@ -86,10 +88,12 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
             let file_name = entry.file_name();
             if let Some(file_name) = file_name.to_str() {
                 let mut folder_entry = FolderEntry {
+                    is_folder: false,
                     title: file_name.to_owned(),
                     size: None,
                 };
                 if entry.path().is_dir() {
+                    folder_entry.is_folder = true;
                     folder.folders.push(folder_entry);
                 } else {
                     let metadata = entry.metadata().expect("Failed to get metadata");

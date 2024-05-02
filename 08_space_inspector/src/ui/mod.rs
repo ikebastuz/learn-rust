@@ -7,7 +7,7 @@ const TEXT_COLOR: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_FG: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_BG: Color = tailwind::SLATE.c900;
 const TEXT_SELECTED_BG: Color = tailwind::SLATE.c700;
-const TABLE_SPACE_WIDTH: usize = 30;
+const TABLE_SPACE_WIDTH: usize = 40;
 
 // Texts
 pub const TEXT_UNKNOWN: &str = "N/A";
@@ -56,7 +56,7 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
         let header_style = Style::default().fg(TABLE_HEADER_FG).bg(TABLE_HEADER_BG);
         let selected_style = Style::default().bg(TEXT_SELECTED_BG);
 
-        let header = ["Name", "Size", "Space"]
+        let header = ["", "Name", "Size", "Space"]
             .into_iter()
             .map(Cell::from)
             .collect::<Row>()
@@ -68,6 +68,7 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
         let table = Table::new(
             rows,
             [
+                Constraint::Length(3),
                 Constraint::Length(20),
                 Constraint::Length(20),
                 Constraint::Length(TABLE_SPACE_WIDTH as u16),
@@ -106,7 +107,16 @@ fn folder_to_rows(folder: &Folder) -> Vec<Row> {
                 }
                 None => (TEXT_UNKNOWN.to_string(), " ".to_string()),
             };
-            Row::new(vec![item.title.clone(), item_size, bar, ".".to_string()])
+            let prefix = match item.is_folder {
+                true => "[ ]",
+                false => "   ",
+            };
+            Row::new(vec![
+                prefix.to_string(),
+                format!("{}", item.title.clone()),
+                item_size,
+                bar,
+            ])
         })
         .collect()
 }
