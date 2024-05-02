@@ -98,7 +98,11 @@ fn folder_to_rows(folder: &Folder) -> Vec<Row> {
         .map(|item| {
             let (item_size, bar) = match item.size {
                 Some(size) => {
-                    let percent = (size * TABLE_SPACE_WIDTH as u64 / max_entry_size).div_euclid(1);
+                    let percent = if max_entry_size == 0 {
+                        0
+                    } else {
+                        (size * TABLE_SPACE_WIDTH as u64 / max_entry_size).div_euclid(1)
+                    };
                     let mut b = String::new();
                     for _ in 0..percent {
                         b.push('█');

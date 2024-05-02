@@ -1,10 +1,10 @@
-use std::env::current_dir;
 use std::io;
 use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::prelude::*;
+use std::env;
 
 mod fs;
 mod ui;
@@ -18,13 +18,23 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
-        let cd = current_dir().unwrap();
-        let current_path = cd.to_string_lossy().into_owned();
+    pub fn new(file_path: Option<String>) -> Self {
+        let current_path = match file_path {
+            Some(path) => {
+                let path_buf = PathBuf::from(&path);
+                if path_buf.is_absolute() {
+                    path_buf.to_string_lossy().into_owned()
+                } else {
+                    let current_dir = env::current_dir().unwrap();
+                    let abs_path = current_dir.join(&path_buf);
+                    abs_path.to_string_lossy().into_owned()
+                }
+            }
+            None => env::current_dir().unwrap().to_string_lossy().into_owned(),
+        };
 
         let mut file_tree_map = HashMap::new();
-
-        process_filepath(&mut file_tree_map, &cd);
+        process_filepath(&mut file_tree_map, &PathBuf::from(&current_path));
 
         App {
             file_tree_map,
@@ -95,7 +105,24 @@ impl App {
 
                     if let Ok(_) = delete_folder(&new_path) {
                         if let Some(subfolder_size) = subfolder.size {
-                            folder.total_size -= subfolder_size;
+                            if subfolder_size > folder.total_size {
+                                folder.total_size = 0;
+                            } else {
+                                folder.total_size -= subfolder_size;
+                            }
+
+                            // Reduce the size of the deleted folder from all parent folders
+                            let mut parent_path = new_path.clone();
+                            while let Some(parent) = parent_path.parent() {
+                                if let Some(parent_folder) =
+                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
+                                {
+                                    parent_folder.total_size -= subfolder_size;
+                                    parent_path = parent.to_path_buf();
+                                } else {
+                                    break; // Stop if the parent folder doesn't exist in the file tree map
+                                }
+                            }
                         }
                         folder.folders.remove(selected_index - 1);
                         let path_string = new_path.to_string_lossy().into_owned();
@@ -114,8 +141,25 @@ impl App {
                     new_path.push(&subfile.title);
 
                     if let Ok(_) = delete_file(&new_path) {
-                        if let Some(subfolder_size) = subfile.size {
-                            folder.total_size -= subfolder_size;
+                        if let Some(subfile_size) = subfile.size {
+                            if subfile_size > folder.total_size {
+                                folder.total_size = 0;
+                            } else {
+                                folder.total_size -= subfile_size;
+                            }
+
+                            // Reduce the size of the deleted file from all parent folders
+                            let mut parent_path = new_path.clone();
+                            while let Some(parent) = parent_path.parent() {
+                                if let Some(parent_folder) =
+                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
+                                {
+                                    parent_folder.total_size -= subfile_size;
+                                    parent_path = parent.to_path_buf();
+                                } else {
+                                    break; // Stop if the parent folder doesn't exist in the file tree map
+                                }
+                            }
                         }
                         folder
                             .files
@@ -162,3 +206,6 @@ impl App {
         }
     }
 }
+
+#[path = "tests.rs"]
+mod tests;

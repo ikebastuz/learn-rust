@@ -1,6 +1,12 @@
 use space_inspector::App;
+use std::env;
 use std::error::Error;
 use std::io::stdout;
+use std::process;
+
+mod config;
+
+use config::Config;
 
 use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -9,9 +15,14 @@ use crossterm::{
 use ratatui::prelude::*;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let config = Config::build(env::args()).unwrap_or_else(|err| {
+        eprintln!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
+
     let terminal = init_terminal()?;
 
-    App::new().run(terminal)?;
+    App::new(config.file_path).run(terminal)?;
 
     restore_terminal()?;
 
