@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::fs::read_dir;
 use std::path::PathBuf;
 
-use crate::ui::TEXT_UNKNOWN;
+use crate::ui::{TEXT_PARENT_DIR, TEXT_UNKNOWN};
 
 #[derive(Debug, Clone, PartialOrd, Eq, PartialEq)]
 pub struct FolderEntry {
@@ -34,6 +34,20 @@ impl Folder {
             files: Vec::new(),
             folders: Vec::new(),
         }
+    }
+
+    pub fn to_list(&self) -> Vec<FolderEntry> {
+        vec![
+            &vec![FolderEntry {
+                title: String::from(TEXT_PARENT_DIR),
+                size: None,
+            }],
+            &self.folders,
+            &self.files,
+        ]
+        .into_iter()
+        .flat_map(|v| v.iter().cloned())
+        .collect()
     }
 }
 
