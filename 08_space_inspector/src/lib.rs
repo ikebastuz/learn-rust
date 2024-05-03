@@ -78,7 +78,7 @@ impl App {
 
     fn cursor_down(&mut self) {
         if let Some(mut folder) = self.get_current_dir_list().cloned() {
-            if folder.cursor_index < folder.files.len() + folder.folders.len() {
+            if folder.cursor_index < folder.entries.len() - 1 {
                 folder.cursor_index += 1;
                 self.file_tree_map.insert(self.current_path.clone(), folder);
             }
@@ -91,97 +91,73 @@ impl App {
 
     fn delete_pressed(&mut self) {
         if let Some(mut folder) = self.get_current_dir_list().cloned() {
-            let folder_entry_type = folder.get_selected_entry_type();
-            match folder_entry_type {
-                FolderEntryType::Parent => return,
+            let entry = folder.get_selected_entry();
+
+            let mut new_path = PathBuf::from(&self.current_path);
+            new_path.push(&entry.title);
+
+            match entry.kind {
+                FolderEntryType::Parent => {
+                    return;
+                }
                 FolderEntryType::Folder => {
-                    if let Some(subfolder) = folder.get_selected_folder() {
-                        let mut new_path = PathBuf::from(&self.current_path);
-                        new_path.push(&subfolder.title);
+                    if let Ok(_) = delete_folder(&new_path) {
+                        if let Some(subfolder_size) = entry.size {
+                            folder.total_size -= subfolder_size;
 
-                        if let Ok(_) = delete_folder(&new_path) {
-                            if let Some(subfolder_size) = subfolder.size {
-                                if subfolder_size > folder.total_size {
-                                    folder.total_size = 0;
-                                } else {
-                                    folder.total_size -= subfolder_size;
-                                }
-
-                                // Reduce the size of the deleted folder from all parent folders
-                                let mut parent_path = new_path.clone();
-                                while let Some(parent) = parent_path.parent() {
-                                    if let Some(parent_folder) =
-                                        self.file_tree_map.get_mut(parent.to_str().unwrap())
+                            let mut parent_path = new_path.clone();
+                            while let Some(parent) = parent_path.parent() {
+                                if let Some(parent_folder) =
+                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
+                                {
+                                    parent_folder.total_size -= subfolder_size;
+                                    if let Some(parent_folder_entry) =
+                                        parent_folder.entries.get_mut(parent_folder.cursor_index)
                                     {
-                                        parent_folder.total_size -= subfolder_size;
-                                        if let Some(parent_folder_entry) = parent_folder
-                                            .folders
-                                            .get_mut(parent_folder.cursor_index)
-                                        {
-                                            if let Some(size) = parent_folder_entry.size.as_mut() {
-                                                *size -= subfolder_size;
-                                            }
+                                        if let Some(size) = parent_folder_entry.size.as_mut() {
+                                            *size -= subfolder_size;
                                         }
-                                        parent_path = parent.to_path_buf();
-                                    } else {
-                                        break; // Stop if the parent folder doesn't exist in the file tree map
                                     }
+                                    parent_path = parent.to_path_buf();
+                                } else {
+                                    break;
                                 }
                             }
-                            folder.remove_selected_folder();
-                            let path_string = new_path.to_string_lossy().into_owned();
-                            self.file_tree_map.remove(&path_string);
-                            self.file_tree_map.insert(self.current_path.clone(), folder);
                         }
-                        return;
+                        folder.remove_selected_folder();
+                        let path_string = new_path.to_string_lossy().into_owned();
+                        self.file_tree_map.remove(&path_string);
+                        self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
                     return;
                 }
                 FolderEntryType::File => {
-                    if let Some(subfile) = folder
-                        .files
-                        .get(folder.cursor_index - folder.folders.len() - 1)
-                    {
-                        let mut new_path = PathBuf::from(&self.current_path);
-                        new_path.push(&subfile.title);
+                    if let Ok(_) = delete_file(&new_path) {
+                        if let Some(subfile_size) = entry.size {
+                            folder.total_size -= subfile_size;
 
-                        if let Ok(_) = delete_file(&new_path) {
-                            if let Some(subfile_size) = subfile.size {
-                                if subfile_size > folder.total_size {
-                                    folder.total_size = 0;
-                                } else {
-                                    folder.total_size -= subfile_size;
-                                }
-
-                                // Reduce the size of the deleted file from all parent folders
-                                let mut parent_path = new_path.clone();
-                                while let Some(parent) = parent_path.parent() {
-                                    if let Some(parent_folder) =
-                                        self.file_tree_map.get_mut(parent.to_str().unwrap())
+                            let mut parent_path = new_path.clone();
+                            while let Some(parent) = parent_path.parent() {
+                                if let Some(parent_folder) =
+                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
+                                {
+                                    parent_folder.total_size -= subfile_size;
+                                    if let Some(parent_folder_entry) =
+                                        parent_folder.entries.get_mut(parent_folder.cursor_index)
                                     {
-                                        parent_folder.total_size -= subfile_size;
-                                        if let Some(parent_folder_entry) = parent_folder
-                                            .folders
-                                            .get_mut(parent_folder.cursor_index)
-                                        {
-                                            if let Some(size) = parent_folder_entry.size.as_mut() {
-                                                *size -= subfile_size;
-                                            }
+                                        if let Some(size) = parent_folder_entry.size.as_mut() {
+                                            *size -= subfile_size;
                                         }
-                                        parent_path = parent.to_path_buf();
-                                    } else {
-                                        break;
                                     }
+                                    parent_path = parent.to_path_buf();
+                                } else {
+                                    break;
                                 }
                             }
-                            folder
-                                .files
-                                .remove(folder.cursor_index - folder.folders.len() - 1);
-                            self.file_tree_map.insert(self.current_path.clone(), folder);
                         }
-                        return;
+                        folder.remove_selected_file();
+                        self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
-
                     return;
                 }
                 FolderEntryType::Unknown => {
@@ -193,26 +169,29 @@ impl App {
 
     fn enter_pressed(&mut self) {
         if let Some(folder) = self.get_current_dir_list().cloned() {
-            let selected_index = folder.cursor_index;
+            let entry = folder.get_selected_entry();
 
-            // ..
-            if selected_index == 0 {
-                if let Some(parent) = Path::new(&self.current_path).parent() {
-                    if let Some(parent_path) = parent.to_str() {
-                        self.current_path = parent_path.to_owned();
-                        self.process_filepath_if_not_exist();
-                        return;
+            match entry.kind {
+                FolderEntryType::Parent => {
+                    if let Some(parent) = Path::new(&self.current_path).parent() {
+                        if let Some(parent_path) = parent.to_str() {
+                            self.current_path = parent_path.to_owned();
+                            self.process_filepath_if_not_exist();
+                            return;
+                        }
                     }
                 }
-            }
-
-            // subfolder
-            if selected_index > 0 && selected_index <= folder.folders.len() {
-                if let Some(subfolder) = folder.folders.get(selected_index - 1) {
+                FolderEntryType::Folder => {
                     let mut new_path = PathBuf::from(&self.current_path);
-                    new_path.push(&subfolder.title);
+                    new_path.push(&entry.title);
                     self.current_path = new_path.to_string_lossy().into_owned();
                     self.process_filepath_if_not_exist();
+                    return;
+                }
+                FolderEntryType::File => {
+                    return;
+                }
+                FolderEntryType::Unknown => {
                     return;
                 }
             }
@@ -228,3 +207,6 @@ impl App {
 
 #[path = "tests.rs"]
 mod tests;
+
+// #[path = "tests2.rs"]
+// mod tests2;

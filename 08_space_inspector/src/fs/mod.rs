@@ -5,16 +5,52 @@ use std::path::PathBuf;
 
 use crate::ui::{TEXT_PARENT_DIR, TEXT_UNKNOWN};
 
-#[derive(Debug, Clone, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq)]
+pub enum FolderEntryType {
+    Parent,
+    File,
+    Folder,
+    Unknown,
+}
+
+impl Ord for FolderEntryType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (FolderEntryType::Parent, _) => Ordering::Less,
+            (FolderEntryType::Folder, FolderEntryType::Parent) => Ordering::Greater,
+            (FolderEntryType::Folder, FolderEntryType::Folder) => Ordering::Equal,
+            (FolderEntryType::Folder, _) => Ordering::Less,
+            (FolderEntryType::File, FolderEntryType::Parent) => Ordering::Greater,
+            (FolderEntryType::File, FolderEntryType::Folder) => Ordering::Greater,
+            (FolderEntryType::File, FolderEntryType::File) => Ordering::Equal,
+            (FolderEntryType::File, _) => Ordering::Less,
+            (FolderEntryType::Unknown, _) => Ordering::Greater,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FolderEntry {
-    pub is_folder: bool,
     pub title: String,
     pub size: Option<u64>,
+    pub kind: FolderEntryType,
 }
 
 impl Ord for FolderEntry {
     fn cmp(&self, other: &Self) -> Ordering {
+        let kind_ordering = self.kind.cmp(&other.kind);
+
+        if kind_ordering != Ordering::Equal {
+            return kind_ordering;
+        }
+
         self.title.cmp(&other.title)
+    }
+}
+
+impl PartialOrd for FolderEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -23,15 +59,7 @@ pub struct Folder {
     pub title: String,
     pub total_size: u64,
     pub cursor_index: usize,
-    pub files: Vec<FolderEntry>,
-    pub folders: Vec<FolderEntry>,
-}
-
-pub enum FolderEntryType {
-    Parent,
-    File,
-    Folder,
-    Unknown,
+    pub entries: Vec<FolderEntry>,
 }
 
 impl Folder {
@@ -40,69 +68,52 @@ impl Folder {
             title,
             total_size: 0,
             cursor_index: 0,
-            files: Vec::new(),
-            folders: Vec::new(),
+            entries: vec![FolderEntry {
+                kind: FolderEntryType::Parent,
+                title: String::from(TEXT_PARENT_DIR),
+                size: None,
+            }],
         }
     }
 
-    pub fn get_selected_folder(&self) -> Option<&FolderEntry> {
-        self.folders.get(self.cursor_index - 1)
+    pub fn get_selected_entry_size(&self) -> u64 {
+        self.get_selected_entry().size.unwrap_or(0)
     }
 
     pub fn remove_selected_folder(&mut self) {
-        self.folders.remove(self.cursor_index - 1);
-    }
-
-    #[warn(dead_code)]
-    pub fn get_selected_folder_size(&self) -> u64 {
-        if let Some(folder) = self.get_selected_folder() {
-            folder.size.unwrap_or(0)
-        } else {
-            0
+        let entry = self.get_selected_entry();
+        if entry.kind == FolderEntryType::Folder {
+            self.entries.remove(self.cursor_index);
         }
     }
 
-    pub fn get_selected_entry_type(&self) -> FolderEntryType {
-        if self.cursor_index == 0 {
-            FolderEntryType::Parent
-        } else if self.cursor_index > 0 && self.cursor_index <= self.folders.len() {
-            FolderEntryType::Folder
-        } else if self.cursor_index > self.folders.len()
-            && self.cursor_index <= self.folders.len() + self.files.len()
-        {
-            FolderEntryType::File
+    pub fn remove_selected_file(&mut self) {
+        let entry = self.get_selected_entry();
+        if entry.kind == FolderEntryType::File {
+            self.entries.remove(self.cursor_index);
+        }
+    }
+
+    pub fn get_selected_entry(&self) -> &FolderEntry {
+        if let Some(entry) = self.entries.get(self.cursor_index) {
+            entry
         } else {
-            FolderEntryType::Unknown
+            panic!("Cursor index out of bounds: {}", self.cursor_index);
         }
     }
 
     pub fn to_list(&self) -> Vec<FolderEntry> {
-        vec![
-            &vec![FolderEntry {
-                is_folder: true,
-                title: String::from(TEXT_PARENT_DIR),
-                size: None,
-            }],
-            &self.folders,
-            &self.files,
-        ]
-        .into_iter()
-        .flat_map(|v| v.iter().cloned())
-        .collect()
+        vec![&self.entries]
+            .into_iter()
+            .flat_map(|v| v.iter().cloned())
+            .collect()
     }
 
     pub fn get_max_entry_size(&self) -> u64 {
         let mut max_entry_size = 0;
 
-        for file in &self.files {
+        for file in &self.entries {
             if let Some(size) = file.size {
-                if size > max_entry_size {
-                    max_entry_size = size
-                }
-            }
-        }
-        for folder in &self.folders {
-            if let Some(size) = folder.size {
                 if size > max_entry_size {
                     max_entry_size = size
                 }
@@ -126,27 +137,26 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
             let file_name = entry.file_name();
             if let Some(file_name) = file_name.to_str() {
                 let mut folder_entry = FolderEntry {
-                    is_folder: false,
+                    kind: FolderEntryType::File,
                     title: file_name.to_owned(),
                     size: None,
                 };
                 if entry.path().is_dir() {
-                    folder_entry.is_folder = true;
-                    folder.folders.push(folder_entry);
+                    folder_entry.kind = FolderEntryType::Folder;
+                    folder.entries.push(folder_entry);
                 } else {
                     let metadata = entry.metadata().expect("Failed to get metadata");
                     let size = metadata.len();
                     folder.total_size += size;
 
                     folder_entry.size = Some(size);
-                    folder.files.push(folder_entry);
+                    folder.entries.push(folder_entry);
                 }
             }
         }
     }
 
-    folder.files.sort();
-    folder.folders.sort();
+    folder.entries.sort();
 
     folder
 }
@@ -168,13 +178,15 @@ pub fn process_filepath(file_tree: &mut HashMap<String, Folder>, path_buf: &Path
 
     let mut folder = path_to_folder(path_buf);
 
-    for subfolder in folder.folders.iter_mut() {
-        let mut subfolder_path = path_buf.clone();
-        subfolder_path.push(&subfolder.title);
+    for child_entry in folder.entries.iter_mut() {
+        if child_entry.kind == FolderEntryType::Folder {
+            let mut subfolder_path = path_buf.clone();
+            subfolder_path.push(&child_entry.title);
 
-        let subfolder_size = process_filepath(file_tree, &subfolder_path);
-        subfolder.size = Some(subfolder_size);
-        folder.total_size += subfolder_size;
+            let subfolder_size = process_filepath(file_tree, &subfolder_path);
+            child_entry.size = Some(subfolder_size);
+            folder.total_size += subfolder_size;
+        }
     }
 
     let total_size = folder.total_size.clone();

@@ -1,3 +1,4 @@
+use crate::fs::FolderEntryType;
 use crate::App;
 use crate::Folder;
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
@@ -13,7 +14,8 @@ const TABLE_SPACE_WIDTH: usize = 40;
 pub const TEXT_UNKNOWN: &str = "N/A";
 pub const TEXT_PARENT_DIR: &str = "..";
 const TEXT_TITLE: &str = "Space inspector";
-const TEXT_HINT: &str = "\nUse ↓↑ to move | \"q\" to exit";
+const TEXT_HINT: &str =
+    "\nUse jk/↓↑ to move | \"Enter\" to select dir | \"d\" to delete | \"q\" to exit";
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -111,7 +113,7 @@ fn folder_to_rows(folder: &Folder) -> Vec<Row> {
                 }
                 None => (TEXT_UNKNOWN.to_string(), " ".to_string()),
             };
-            let prefix = match item.is_folder {
+            let prefix = match item.kind == FolderEntryType::Folder {
                 true => "[ ]",
                 false => "   ",
             };

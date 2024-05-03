@@ -2,6 +2,7 @@
 mod tests {
     const TEST_FILE_PATH_VIEW: &str = "./tests/view";
     const TEST_FILE_PATH_EDIT: &str = "./tests/edit";
+    use crate::fs::{FolderEntry, FolderEntryType};
     use crate::App;
 
     fn setup_app_view() -> App {
@@ -12,19 +13,53 @@ mod tests {
         App::new(Some(TEST_FILE_PATH_EDIT.to_string()))
     }
 
-    fn assert_parent_folder_state(app: &App) {
-        assert_eq!(app.get_current_dir_list().unwrap().files.len(), 2);
-        assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 2);
+    fn assert_item_at_index_is(app: &App, index: usize, kind: FolderEntryType) {
+        assert_eq!(
+            app.get_current_dir_list()
+                .unwrap()
+                .entries
+                .get(index)
+                .unwrap()
+                .kind,
+            kind
+        );
     }
 
-    fn assert_folder1_state(app: &App) {
-        assert_eq!(app.get_current_dir_list().unwrap().files.len(), 2);
-        assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 0);
+    fn assert_item_at_index_title(app: &App, index: usize, title: String) {
+        assert_eq!(
+            app.get_current_dir_list()
+                .unwrap()
+                .entries
+                .get(index)
+                .unwrap()
+                .title,
+            title
+        );
+    }
+
+    fn get_entry_by_kind(app: &App, kind: FolderEntryType) -> Vec<FolderEntry> {
+        app.get_current_dir_list()
+            .unwrap()
+            .entries
+            .iter()
+            .filter(|e| e.kind == kind)
+            .cloned()
+            .collect()
+    }
+
+    fn assert_parent_folder_state(app: &App) {
+        assert_eq!(get_entry_by_kind(app, FolderEntryType::File).len(), 3);
+        assert_eq!(get_entry_by_kind(app, FolderEntryType::Folder).len(), 3);
+    }
+
+    fn assert_parent_folder_a_state(app: &App) {
+        assert_eq!(get_entry_by_kind(app, FolderEntryType::File).len(), 2);
+        assert_eq!(get_entry_by_kind(app, FolderEntryType::Folder).len(), 0);
     }
 
     fn assert_delete_folder_state(app: &App) {
-        assert_eq!(app.get_current_dir_list().unwrap().files.len(), 3);
-        assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 1);
+        assert_eq!(get_entry_by_kind(app, FolderEntryType::File).len(), 3);
+        assert_eq!(get_entry_by_kind(app, FolderEntryType::Folder).len(), 1);
     }
 
     fn assert_cursor_index(app: &App, index: usize) {
@@ -35,10 +70,29 @@ mod tests {
         use super::*;
 
         #[test]
-        fn has_correct_amount_of_current_folder_files_and_folders() {
+        fn test_ordering_by_kind() {
             let app = setup_app_view();
 
-            assert_parent_folder_state(&app)
+            assert_item_at_index_is(&app, 0, FolderEntryType::Parent);
+            assert_item_at_index_is(&app, 1, FolderEntryType::Folder);
+            assert_item_at_index_is(&app, 2, FolderEntryType::Folder);
+            assert_item_at_index_is(&app, 3, FolderEntryType::Folder);
+            assert_item_at_index_is(&app, 4, FolderEntryType::File);
+            assert_item_at_index_is(&app, 5, FolderEntryType::File);
+            assert_item_at_index_is(&app, 6, FolderEntryType::File);
+        }
+
+        #[test]
+        fn test_ordering_by_title() {
+            let app = setup_app_view();
+
+            assert_item_at_index_title(&app, 0, "..".to_string());
+            assert_item_at_index_title(&app, 1, "a_folder".to_string());
+            assert_item_at_index_title(&app, 2, "b_folder".to_string());
+            assert_item_at_index_title(&app, 3, "c_folder".to_string());
+            assert_item_at_index_title(&app, 4, "a_root_file.txt".to_string());
+            assert_item_at_index_title(&app, 5, "d_root_file.txt".to_string());
+            assert_item_at_index_title(&app, 6, "z_root_file.txt".to_string());
         }
 
         #[test]
@@ -47,7 +101,7 @@ mod tests {
 
             let file_tree = app.file_tree_map;
 
-            assert_eq!(file_tree.keys().len(), 3);
+            assert_eq!(file_tree.keys().len(), 4);
         }
     }
 
@@ -84,10 +138,10 @@ mod tests {
         fn stops_cursor_at_very_bottom() {
             let mut app = setup_app_view();
 
-            for _ in 0..10 {
+            for _ in 0..20 {
                 app.cursor_down();
             }
-            assert_cursor_index(&mut app, 4);
+            assert_cursor_index(&mut app, 6);
         }
     }
 
@@ -102,7 +156,7 @@ mod tests {
             app.enter_pressed();
 
             assert_cursor_index(&app, 0);
-            assert_folder1_state(&app);
+            assert_parent_folder_a_state(&app);
         }
 
         #[test]
@@ -112,7 +166,7 @@ mod tests {
             app.cursor_down();
             app.enter_pressed();
 
-            assert_folder1_state(&app);
+            assert_parent_folder_a_state(&app);
 
             app.enter_pressed();
             assert_parent_folder_state(&app);
@@ -126,11 +180,13 @@ mod tests {
             app.cursor_down();
             app.cursor_down();
             app.cursor_down();
-            assert_cursor_index(&app, 3);
+            app.cursor_down();
+            app.cursor_down();
+            assert_cursor_index(&app, 5);
 
             app.enter_pressed();
 
-            assert_cursor_index(&app, 3);
+            assert_cursor_index(&app, 5);
             assert_parent_folder_state(&app);
         }
     }
@@ -145,12 +201,12 @@ mod tests {
         fn generate_lorem_ipsum() -> String {
             String::from(
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \
-Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. \
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi \
-ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit \
-in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur \
-sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt \
-mollit anim id est laborum.",
+    Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. \
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi \
+    ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit \
+    in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur \
+    sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt \
+    mollit anim id est laborum.",
             )
         }
 
@@ -218,8 +274,8 @@ mollit anim id est laborum.",
             assert_delete_folder_state(&app);
             app.cursor_down();
             app.delete_pressed();
-            assert_eq!(app.get_current_dir_list().unwrap().files.len(), 3);
-            assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 0);
+            assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 3);
+            assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 0);
             cleanup_testing_files();
         }
 
@@ -231,8 +287,8 @@ mollit anim id est laborum.",
             app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
-            assert_eq!(app.get_current_dir_list().unwrap().files.len(), 2);
-            assert_eq!(app.get_current_dir_list().unwrap().folders.len(), 1);
+            assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 2);
+            assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 1);
             cleanup_testing_files();
         }
 
@@ -288,7 +344,7 @@ mollit anim id est laborum.",
             let folder_1_upd = app.get_current_dir_list().unwrap();
             assert_eq!(folder_1_upd.total_size, (TEST_FILE_SIZE * 5) as u64);
             assert_eq!(
-                folder_1_upd.get_selected_folder_size(),
+                folder_1_upd.get_selected_entry_size(),
                 (TEST_FILE_SIZE * 2) as u64
             );
 
@@ -298,7 +354,7 @@ mollit anim id est laborum.",
             let root_entry_upd = app.get_current_dir_list().unwrap();
             assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 8) as u64);
             assert_eq!(
-                root_entry_upd.get_selected_folder_size(),
+                root_entry_upd.get_selected_entry_size(),
                 (TEST_FILE_SIZE * 5) as u64
             );
 
@@ -331,16 +387,11 @@ mollit anim id est laborum.",
             let root_entry_upd = app.get_current_dir_list().unwrap();
             assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 6) as u64);
             assert_eq!(
-                root_entry_upd.get_selected_folder_size(),
+                root_entry_upd.get_selected_entry_size(),
                 (TEST_FILE_SIZE * 3) as u64
             );
 
             cleanup_testing_files();
         }
-
-        // #[test]
-        // fn qwe() {
-        //     create_testing_files();
-        // }
     }
 }
