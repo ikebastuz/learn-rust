@@ -6,11 +6,15 @@ mod tests {
     use crate::App;
 
     fn setup_app_view() -> App {
-        App::new(Some(TEST_FILE_PATH_VIEW.to_string()))
+        let mut app = App::new();
+        app.init(Some(TEST_FILE_PATH_VIEW.to_string()));
+        app
     }
 
     fn setup_app_edit() -> App {
-        App::new(Some(TEST_FILE_PATH_EDIT.to_string()))
+        let mut app = App::new();
+        app.init(Some(TEST_FILE_PATH_EDIT.to_string()));
+        app
     }
 
     fn assert_item_at_index_is(app: &App, index: usize, kind: FolderEntryType) {

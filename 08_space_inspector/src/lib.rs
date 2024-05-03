@@ -19,7 +19,15 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(file_path: Option<String>) -> Self {
+    pub fn new() -> Self {
+        App {
+            confirming_deletion: false,
+            file_tree_map: HashMap::new(),
+            current_path: ".".to_string(),
+        }
+    }
+
+    pub fn init(&mut self, file_path: Option<String>) {
         let current_path = match file_path {
             Some(path) => {
                 let path_buf = PathBuf::from(&path);
@@ -34,14 +42,8 @@ impl App {
             None => env::current_dir().unwrap().to_string_lossy().into_owned(),
         };
 
-        let mut file_tree_map = HashMap::new();
-        process_filepath(&mut file_tree_map, &PathBuf::from(&current_path));
-
-        App {
-            confirming_deletion: false,
-            file_tree_map,
-            current_path,
-        }
+        self.current_path = current_path;
+        self.process_filepath_if_not_exist();
     }
 
     fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
