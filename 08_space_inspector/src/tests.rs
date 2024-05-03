@@ -15,7 +15,7 @@ mod tests {
 
     fn assert_item_at_index_is(app: &App, index: usize, kind: FolderEntryType) {
         assert_eq!(
-            app.get_current_dir_list()
+            app.get_current_folder()
                 .unwrap()
                 .entries
                 .get(index)
@@ -27,7 +27,7 @@ mod tests {
 
     fn assert_item_at_index_title(app: &App, index: usize, title: String) {
         assert_eq!(
-            app.get_current_dir_list()
+            app.get_current_folder()
                 .unwrap()
                 .entries
                 .get(index)
@@ -38,7 +38,7 @@ mod tests {
     }
 
     fn get_entry_by_kind(app: &App, kind: FolderEntryType) -> Vec<FolderEntry> {
-        app.get_current_dir_list()
+        app.get_current_folder()
             .unwrap()
             .entries
             .iter()
@@ -63,7 +63,7 @@ mod tests {
     }
 
     fn assert_cursor_index(app: &App, index: usize) {
-        assert_eq!(app.get_current_dir_list().unwrap().cursor_index, index);
+        assert_eq!(app.get_current_folder().unwrap().cursor_index, index);
     }
 
     mod file_tree {
@@ -297,14 +297,14 @@ mod tests {
             create_testing_files();
             let mut app = setup_app_edit();
 
-            let root_entry = app.get_current_dir_list().unwrap();
+            let root_entry = app.get_current_folder().unwrap();
             assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
 
-            let root_entry_updated = app.get_current_dir_list().unwrap();
+            let root_entry_updated = app.get_current_folder().unwrap();
             assert_eq!(root_entry_updated.get_size(), (TEST_FILE_SIZE * 8) as u64);
 
             cleanup_testing_files();
@@ -315,33 +315,33 @@ mod tests {
             create_testing_files();
             let mut app = setup_app_edit();
 
-            let root_entry = app.get_current_dir_list().unwrap();
+            let root_entry = app.get_current_folder().unwrap();
             assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.enter_pressed();
 
-            let folder_1 = app.get_current_dir_list().unwrap();
+            let folder_1 = app.get_current_folder().unwrap();
             assert_eq!(folder_1.get_size(), (TEST_FILE_SIZE * 6) as u64);
 
             app.cursor_down();
             app.enter_pressed();
 
-            let folder_2 = app.get_current_dir_list().unwrap();
+            let folder_2 = app.get_current_folder().unwrap();
             assert_eq!(folder_2.get_size(), (TEST_FILE_SIZE * 3) as u64);
 
             app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
 
-            let folder_2_upd = app.get_current_dir_list().unwrap();
+            let folder_2_upd = app.get_current_folder().unwrap();
             assert_eq!(folder_2_upd.get_size(), (TEST_FILE_SIZE * 2) as u64);
 
             app.cursor_up();
             app.cursor_up();
             app.enter_pressed();
 
-            let folder_1_upd = app.get_current_dir_list().unwrap();
+            let folder_1_upd = app.get_current_folder().unwrap();
             assert_eq!(folder_1_upd.get_size(), (TEST_FILE_SIZE * 5) as u64);
             assert_eq!(
                 folder_1_upd.get_selected_entry_size(),
@@ -351,7 +351,7 @@ mod tests {
             app.cursor_up();
             app.enter_pressed();
 
-            let root_entry_upd = app.get_current_dir_list().unwrap();
+            let root_entry_upd = app.get_current_folder().unwrap();
             assert_eq!(root_entry_upd.get_size(), (TEST_FILE_SIZE * 8) as u64);
             assert_eq!(
                 root_entry_upd.get_selected_entry_size(),
@@ -366,25 +366,25 @@ mod tests {
             create_testing_files();
             let mut app = setup_app_edit();
 
-            let root_entry = app.get_current_dir_list().unwrap();
+            let root_entry = app.get_current_folder().unwrap();
             assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.enter_pressed();
 
-            let folder_1 = app.get_current_dir_list().unwrap();
+            let folder_1 = app.get_current_folder().unwrap();
             assert_eq!(folder_1.get_size(), (TEST_FILE_SIZE * 6) as u64);
 
             app.cursor_down();
             app.delete_pressed();
 
-            let folder_1_upd = app.get_current_dir_list().unwrap();
+            let folder_1_upd = app.get_current_folder().unwrap();
             assert_eq!(folder_1_upd.get_size(), (TEST_FILE_SIZE * 3) as u64);
 
             app.cursor_up();
             app.enter_pressed();
 
-            let root_entry_upd = app.get_current_dir_list().unwrap();
+            let root_entry_upd = app.get_current_folder().unwrap();
             assert_eq!(root_entry_upd.get_size(), (TEST_FILE_SIZE * 6) as u64);
             assert_eq!(
                 root_entry_upd.get_selected_entry_size(),

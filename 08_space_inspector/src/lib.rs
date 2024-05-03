@@ -68,7 +68,7 @@ impl App {
     }
 
     fn cursor_up(&mut self) {
-        if let Some(mut folder) = self.get_current_dir_list().cloned() {
+        if let Some(mut folder) = self.get_current_folder().cloned() {
             if folder.cursor_index > 0 {
                 folder.cursor_index -= 1;
                 self.file_tree_map.insert(self.current_path.clone(), folder);
@@ -77,7 +77,7 @@ impl App {
     }
 
     fn cursor_down(&mut self) {
-        if let Some(mut folder) = self.get_current_dir_list().cloned() {
+        if let Some(mut folder) = self.get_current_folder().cloned() {
             if folder.cursor_index < folder.entries.len() - 1 {
                 folder.cursor_index += 1;
                 self.file_tree_map.insert(self.current_path.clone(), folder);
@@ -85,81 +85,63 @@ impl App {
         }
     }
 
-    fn get_current_dir_list(&self) -> Option<&Folder> {
+    fn get_current_folder(&self) -> Option<&Folder> {
         self.file_tree_map.get(&self.current_path)
     }
 
+    fn propagate_size_update_upwards(&mut self, to_delete_path: &PathBuf, deleted_entry_size: u64) {
+        let mut parent_path = to_delete_path.clone();
+        while let Some(parent) = parent_path.parent() {
+            if let Some(parent_folder) = self.file_tree_map.get_mut(parent.to_str().unwrap()) {
+                if let Some(parent_folder_entry) =
+                    parent_folder.entries.get_mut(parent_folder.cursor_index)
+                {
+                    if let Some(size) = parent_folder_entry.size.as_mut() {
+                        *size -= deleted_entry_size;
+                    }
+                }
+                parent_path = parent.to_path_buf();
+            } else {
+                break;
+            }
+        }
+    }
+
     fn delete_pressed(&mut self) {
-        if let Some(mut folder) = self.get_current_dir_list().cloned() {
+        if let Some(mut folder) = self.get_current_folder().cloned() {
             let entry = folder.get_selected_entry();
 
-            let mut new_path = PathBuf::from(&self.current_path);
-            new_path.push(&entry.title);
+            let mut to_delete_path = PathBuf::from(&self.current_path);
+            to_delete_path.push(&entry.title);
 
             match entry.kind {
-                FolderEntryType::Parent => {
-                    return;
-                }
+                FolderEntryType::Parent => {}
                 FolderEntryType::Folder => {
-                    if let Ok(_) = delete_folder(&new_path) {
+                    if let Ok(_) = delete_folder(&to_delete_path) {
                         if let Some(subfolder_size) = entry.size {
-                            let mut parent_path = new_path.clone();
-                            while let Some(parent) = parent_path.parent() {
-                                if let Some(parent_folder) =
-                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
-                                {
-                                    if let Some(parent_folder_entry) =
-                                        parent_folder.entries.get_mut(parent_folder.cursor_index)
-                                    {
-                                        if let Some(size) = parent_folder_entry.size.as_mut() {
-                                            *size -= subfolder_size;
-                                        }
-                                    }
-                                    parent_path = parent.to_path_buf();
-                                } else {
-                                    break;
-                                }
-                            }
+                            self.propagate_size_update_upwards(&to_delete_path, subfolder_size);
                         }
-                        folder.remove_selected_folder();
-                        let path_string = new_path.to_string_lossy().into_owned();
+                        folder.remove_selected();
+                        let path_string = to_delete_path.to_string_lossy().into_owned();
                         self.file_tree_map.remove(&path_string);
                         self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
-                    return;
                 }
                 FolderEntryType::File => {
-                    if let Ok(_) = delete_file(&new_path) {
+                    if let Ok(_) = delete_file(&to_delete_path) {
                         if let Some(subfile_size) = entry.size {
-                            let mut parent_path = new_path.clone();
-                            while let Some(parent) = parent_path.parent() {
-                                if let Some(parent_folder) =
-                                    self.file_tree_map.get_mut(parent.to_str().unwrap())
-                                {
-                                    if let Some(parent_folder_entry) =
-                                        parent_folder.entries.get_mut(parent_folder.cursor_index)
-                                    {
-                                        if let Some(size) = parent_folder_entry.size.as_mut() {
-                                            *size -= subfile_size;
-                                        }
-                                    }
-                                    parent_path = parent.to_path_buf();
-                                } else {
-                                    break;
-                                }
-                            }
+                            self.propagate_size_update_upwards(&to_delete_path, subfile_size);
                         }
-                        folder.remove_selected_file();
+                        folder.remove_selected();
                         self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
-                    return;
                 }
             }
         }
     }
 
     fn enter_pressed(&mut self) {
-        if let Some(folder) = self.get_current_dir_list().cloned() {
+        if let Some(folder) = self.get_current_folder().cloned() {
             let entry = folder.get_selected_entry();
 
             match entry.kind {

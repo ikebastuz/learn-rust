@@ -82,18 +82,8 @@ impl Folder {
         self.get_selected_entry().size.unwrap_or(0)
     }
 
-    pub fn remove_selected_folder(&mut self) {
-        let entry = self.get_selected_entry();
-        if entry.kind == FolderEntryType::Folder {
-            self.entries.remove(self.cursor_index);
-        }
-    }
-
-    pub fn remove_selected_file(&mut self) {
-        let entry = self.get_selected_entry();
-        if entry.kind == FolderEntryType::File {
-            self.entries.remove(self.cursor_index);
-        }
+    pub fn remove_selected(&mut self) {
+        self.entries.remove(self.cursor_index);
     }
 
     pub fn get_selected_entry(&self) -> &FolderEntry {

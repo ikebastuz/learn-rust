@@ -26,7 +26,7 @@ impl Widget for &mut App {
         ]);
         let [header_area, rest_area, footer_area] = vertical.areas(area);
 
-        let maybe_folder = self.get_current_dir_list();
+        let maybe_folder = self.get_current_folder();
 
         render_title(header_area, buf, maybe_folder);
         render_table(rest_area, buf, maybe_folder);
