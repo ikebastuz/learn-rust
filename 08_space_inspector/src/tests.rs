@@ -263,7 +263,67 @@ mod tests {
             assert_cursor_index(&app, 0);
             assert_delete_folder_state(&app);
             app.delete_pressed();
+            app.delete_pressed();
             assert_delete_folder_state(&app);
+            cleanup_testing_files();
+        }
+
+        #[test]
+        fn does_nothing_when_delete_pressed_once() {
+            create_testing_files();
+            let mut app = setup_app_edit();
+            assert_delete_folder_state(&app);
+            app.cursor_down();
+            app.delete_pressed();
+            assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 3);
+            assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 1);
+            cleanup_testing_files();
+        }
+
+        #[test]
+        fn resets_delete_confirmation_on_cursor_move() {
+            create_testing_files();
+            let mut app = setup_app_edit();
+            app.delete_pressed();
+            app.cursor_down();
+            assert_eq!(app.confirming_deletion, false);
+            app.delete_pressed();
+            app.cursor_up();
+            assert_eq!(app.confirming_deletion, false);
+            cleanup_testing_files();
+        }
+
+        #[test]
+        fn resets_delete_confirmation_on_folder_enter() {
+            create_testing_files();
+            let mut app = setup_app_edit();
+            app.cursor_down();
+            app.delete_pressed();
+            app.enter_pressed();
+            assert_eq!(app.confirming_deletion, false);
+            cleanup_testing_files();
+        }
+
+        #[test]
+        fn resets_delete_confirmation_after_deleting_folder() {
+            create_testing_files();
+            let mut app = setup_app_edit();
+            app.cursor_down();
+            app.delete_pressed();
+            app.delete_pressed();
+            assert_eq!(app.confirming_deletion, false);
+            cleanup_testing_files();
+        }
+
+        #[test]
+        fn resets_delete_confirmation_after_deleting_file() {
+            create_testing_files();
+            let mut app = setup_app_edit();
+            app.cursor_down();
+            app.cursor_down();
+            app.delete_pressed();
+            app.delete_pressed();
+            assert_eq!(app.confirming_deletion, false);
             cleanup_testing_files();
         }
 
@@ -273,6 +333,7 @@ mod tests {
             let mut app = setup_app_edit();
             assert_delete_folder_state(&app);
             app.cursor_down();
+            app.delete_pressed();
             app.delete_pressed();
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 3);
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 0);
@@ -286,6 +347,7 @@ mod tests {
             assert_delete_folder_state(&app);
             app.cursor_down();
             app.cursor_down();
+            app.delete_pressed();
             app.delete_pressed();
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 2);
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 1);
@@ -302,6 +364,7 @@ mod tests {
 
             app.cursor_down();
             app.cursor_down();
+            app.delete_pressed();
             app.delete_pressed();
 
             let root_entry_updated = app.get_current_folder().unwrap();
@@ -332,6 +395,7 @@ mod tests {
 
             app.cursor_down();
             app.cursor_down();
+            app.delete_pressed();
             app.delete_pressed();
 
             let folder_2_upd = app.get_current_folder().unwrap();
@@ -377,6 +441,7 @@ mod tests {
 
             app.cursor_down();
             app.delete_pressed();
+            app.delete_pressed();
 
             let folder_1_upd = app.get_current_folder().unwrap();
             assert_eq!(folder_1_upd.get_size(), (TEST_FILE_SIZE * 3) as u64);
@@ -390,6 +455,23 @@ mod tests {
                 root_entry_upd.get_selected_entry_size(),
                 (TEST_FILE_SIZE * 3) as u64
             );
+
+            cleanup_testing_files();
+        }
+
+        #[test]
+        fn moves_cursor_one_step_up_after_deleting_bottom_entry() {
+            create_testing_files();
+            let mut app = setup_app_edit();
+
+            for _ in 1..20 {
+                app.cursor_down();
+            }
+
+            assert_eq!(app.get_current_folder().unwrap().cursor_index, 4);
+            app.delete_pressed();
+            app.delete_pressed();
+            assert_eq!(app.get_current_folder().unwrap().cursor_index, 3);
 
             cleanup_testing_files();
         }

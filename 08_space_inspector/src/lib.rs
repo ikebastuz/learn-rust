@@ -13,6 +13,7 @@ use fs::{delete_file, delete_folder, process_filepath, Folder, FolderEntryType};
 
 #[derive(Debug)]
 pub struct App {
+    confirming_deletion: bool,
     current_path: String,
     file_tree_map: HashMap<String, Folder>,
 }
@@ -37,6 +38,7 @@ impl App {
         process_filepath(&mut file_tree_map, &PathBuf::from(&current_path));
 
         App {
+            confirming_deletion: false,
             file_tree_map,
             current_path,
         }
@@ -74,6 +76,7 @@ impl App {
                 self.file_tree_map.insert(self.current_path.clone(), folder);
             }
         }
+        self.confirming_deletion = false;
     }
 
     fn cursor_down(&mut self) {
@@ -83,6 +86,7 @@ impl App {
                 self.file_tree_map.insert(self.current_path.clone(), folder);
             }
         }
+        self.confirming_deletion = false;
     }
 
     fn get_current_folder(&self) -> Option<&Folder> {
@@ -117,23 +121,33 @@ impl App {
             match entry.kind {
                 FolderEntryType::Parent => {}
                 FolderEntryType::Folder => {
-                    if let Ok(_) = delete_folder(&to_delete_path) {
-                        if let Some(subfolder_size) = entry.size {
-                            self.propagate_size_update_upwards(&to_delete_path, subfolder_size);
+                    if !self.confirming_deletion {
+                        self.confirming_deletion = true;
+                    } else {
+                        if let Ok(_) = delete_folder(&to_delete_path) {
+                            if let Some(subfolder_size) = entry.size {
+                                self.propagate_size_update_upwards(&to_delete_path, subfolder_size);
+                            }
+                            folder.remove_selected();
+                            let path_string = to_delete_path.to_string_lossy().into_owned();
+                            self.file_tree_map.remove(&path_string);
+                            self.file_tree_map.insert(self.current_path.clone(), folder);
+                            self.confirming_deletion = false;
                         }
-                        folder.remove_selected();
-                        let path_string = to_delete_path.to_string_lossy().into_owned();
-                        self.file_tree_map.remove(&path_string);
-                        self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
                 }
                 FolderEntryType::File => {
-                    if let Ok(_) = delete_file(&to_delete_path) {
-                        if let Some(subfile_size) = entry.size {
-                            self.propagate_size_update_upwards(&to_delete_path, subfile_size);
+                    if !self.confirming_deletion {
+                        self.confirming_deletion = true;
+                    } else {
+                        if let Ok(_) = delete_file(&to_delete_path) {
+                            if let Some(subfile_size) = entry.size {
+                                self.propagate_size_update_upwards(&to_delete_path, subfile_size);
+                            }
+                            folder.remove_selected();
+                            self.file_tree_map.insert(self.current_path.clone(), folder);
+                            self.confirming_deletion = false;
                         }
-                        folder.remove_selected();
-                        self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
                 }
             }
@@ -150,7 +164,6 @@ impl App {
                         if let Some(parent_path) = parent.to_str() {
                             self.current_path = parent_path.to_owned();
                             self.process_filepath_if_not_exist();
-                            return;
                         }
                     }
                 }
@@ -159,13 +172,11 @@ impl App {
                     new_path.push(&entry.title);
                     self.current_path = new_path.to_string_lossy().into_owned();
                     self.process_filepath_if_not_exist();
-                    return;
                 }
-                FolderEntryType::File => {
-                    return;
-                }
+                FolderEntryType::File => {}
             }
         }
+        self.confirming_deletion = false;
     }
 
     fn process_filepath_if_not_exist(&mut self) {

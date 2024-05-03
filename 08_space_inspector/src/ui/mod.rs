@@ -8,6 +8,7 @@ const TEXT_COLOR: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_FG: Color = tailwind::SLATE.c200;
 const TABLE_HEADER_BG: Color = tailwind::SLATE.c900;
 const TEXT_SELECTED_BG: Color = tailwind::SLATE.c700;
+const TEXT_PRE_DELETED_BG: Color = tailwind::RED.c600;
 const TABLE_SPACE_WIDTH: usize = 40;
 
 // Texts
@@ -15,7 +16,7 @@ pub const TEXT_UNKNOWN: &str = "N/A";
 pub const TEXT_PARENT_DIR: &str = "..";
 const TEXT_TITLE: &str = "Space inspector";
 const TEXT_HINT: &str =
-    "\nUse jk/↓↑ to move | \"Enter\" to select dir | \"d\" to delete | \"q\" to exit";
+    "\nUse jk/↓↑ to move | \"Enter\" to select dir | \"d-d\" to delete | \"q\" to exit";
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -29,7 +30,7 @@ impl Widget for &mut App {
         let maybe_folder = self.get_current_folder();
 
         render_title(header_area, buf, maybe_folder);
-        render_table(rest_area, buf, maybe_folder);
+        render_table(rest_area, buf, maybe_folder, self.confirming_deletion);
         render_footer(footer_area, buf);
     }
 }
@@ -48,7 +49,12 @@ fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
     }
 }
 
-fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
+fn render_table(
+    area: Rect,
+    buf: &mut Buffer,
+    maybe_folder: Option<&Folder>,
+    confirming_deletion: bool,
+) {
     if let Some(folder) = maybe_folder {
         let block = Block::default()
             .borders(Borders::ALL)
@@ -56,7 +62,11 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
             .bg(NORMAL_ROW_COLOR);
 
         let header_style = Style::default().fg(TABLE_HEADER_FG).bg(TABLE_HEADER_BG);
-        let selected_style = Style::default().bg(TEXT_SELECTED_BG);
+        let selected_style = if confirming_deletion {
+            Style::default().bg(TEXT_PRE_DELETED_BG)
+        } else {
+            Style::default().bg(TEXT_SELECTED_BG)
+        };
 
         let header = ["", "Name", "Size", "Space"]
             .into_iter()
