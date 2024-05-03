@@ -298,14 +298,14 @@ mod tests {
             let mut app = setup_app_edit();
 
             let root_entry = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 9) as u64);
+            assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
 
             let root_entry_updated = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry_updated.total_size, (TEST_FILE_SIZE * 8) as u64);
+            assert_eq!(root_entry_updated.get_size(), (TEST_FILE_SIZE * 8) as u64);
 
             cleanup_testing_files();
         }
@@ -316,33 +316,33 @@ mod tests {
             let mut app = setup_app_edit();
 
             let root_entry = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 9) as u64);
+            assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.enter_pressed();
 
             let folder_1 = app.get_current_dir_list().unwrap();
-            assert_eq!(folder_1.total_size, (TEST_FILE_SIZE * 6) as u64);
+            assert_eq!(folder_1.get_size(), (TEST_FILE_SIZE * 6) as u64);
 
             app.cursor_down();
             app.enter_pressed();
 
             let folder_2 = app.get_current_dir_list().unwrap();
-            assert_eq!(folder_2.total_size, (TEST_FILE_SIZE * 3) as u64);
+            assert_eq!(folder_2.get_size(), (TEST_FILE_SIZE * 3) as u64);
 
             app.cursor_down();
             app.cursor_down();
             app.delete_pressed();
 
             let folder_2_upd = app.get_current_dir_list().unwrap();
-            assert_eq!(folder_2_upd.total_size, (TEST_FILE_SIZE * 2) as u64);
+            assert_eq!(folder_2_upd.get_size(), (TEST_FILE_SIZE * 2) as u64);
 
             app.cursor_up();
             app.cursor_up();
             app.enter_pressed();
 
             let folder_1_upd = app.get_current_dir_list().unwrap();
-            assert_eq!(folder_1_upd.total_size, (TEST_FILE_SIZE * 5) as u64);
+            assert_eq!(folder_1_upd.get_size(), (TEST_FILE_SIZE * 5) as u64);
             assert_eq!(
                 folder_1_upd.get_selected_entry_size(),
                 (TEST_FILE_SIZE * 2) as u64
@@ -352,7 +352,7 @@ mod tests {
             app.enter_pressed();
 
             let root_entry_upd = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 8) as u64);
+            assert_eq!(root_entry_upd.get_size(), (TEST_FILE_SIZE * 8) as u64);
             assert_eq!(
                 root_entry_upd.get_selected_entry_size(),
                 (TEST_FILE_SIZE * 5) as u64
@@ -367,25 +367,25 @@ mod tests {
             let mut app = setup_app_edit();
 
             let root_entry = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry.total_size, (TEST_FILE_SIZE * 9) as u64);
+            assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
             app.cursor_down();
             app.enter_pressed();
 
             let folder_1 = app.get_current_dir_list().unwrap();
-            assert_eq!(folder_1.total_size, (TEST_FILE_SIZE * 6) as u64);
+            assert_eq!(folder_1.get_size(), (TEST_FILE_SIZE * 6) as u64);
 
             app.cursor_down();
             app.delete_pressed();
 
             let folder_1_upd = app.get_current_dir_list().unwrap();
-            assert_eq!(folder_1_upd.total_size, (TEST_FILE_SIZE * 3) as u64);
+            assert_eq!(folder_1_upd.get_size(), (TEST_FILE_SIZE * 3) as u64);
 
             app.cursor_up();
             app.enter_pressed();
 
             let root_entry_upd = app.get_current_dir_list().unwrap();
-            assert_eq!(root_entry_upd.total_size, (TEST_FILE_SIZE * 6) as u64);
+            assert_eq!(root_entry_upd.get_size(), (TEST_FILE_SIZE * 6) as u64);
             assert_eq!(
                 root_entry_upd.get_selected_entry_size(),
                 (TEST_FILE_SIZE * 3) as u64

@@ -40,7 +40,7 @@ fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
             "{} | {} | {}",
             TEXT_TITLE,
             folder.title,
-            format_file_size(folder.total_size)
+            format_file_size(folder.get_size())
         ))
         .bold()
         .centered()

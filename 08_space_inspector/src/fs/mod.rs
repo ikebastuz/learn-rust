@@ -10,7 +10,6 @@ pub enum FolderEntryType {
     Parent,
     File,
     Folder,
-    Unknown,
 }
 
 impl Ord for FolderEntryType {
@@ -24,7 +23,6 @@ impl Ord for FolderEntryType {
             (FolderEntryType::File, FolderEntryType::Folder) => Ordering::Greater,
             (FolderEntryType::File, FolderEntryType::File) => Ordering::Equal,
             (FolderEntryType::File, _) => Ordering::Less,
-            (FolderEntryType::Unknown, _) => Ordering::Greater,
         }
     }
 }
@@ -57,7 +55,6 @@ impl PartialOrd for FolderEntry {
 #[derive(Debug, Clone)]
 pub struct Folder {
     pub title: String,
-    pub total_size: u64,
     pub cursor_index: usize,
     pub entries: Vec<FolderEntry>,
 }
@@ -66,7 +63,6 @@ impl Folder {
     pub fn new(title: String) -> Self {
         Folder {
             title,
-            total_size: 0,
             cursor_index: 0,
             entries: vec![FolderEntry {
                 kind: FolderEntryType::Parent,
@@ -74,6 +70,12 @@ impl Folder {
                 size: None,
             }],
         }
+    }
+
+    pub fn get_size(&self) -> u64 {
+        self.entries
+            .iter()
+            .fold(0, |acc, entry| acc + entry.size.unwrap_or(0))
     }
 
     pub fn get_selected_entry_size(&self) -> u64 {
@@ -147,7 +149,6 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
                 } else {
                     let metadata = entry.metadata().expect("Failed to get metadata");
                     let size = metadata.len();
-                    folder.total_size += size;
 
                     folder_entry.size = Some(size);
                     folder.entries.push(folder_entry);
@@ -173,7 +174,7 @@ pub fn process_filepath(file_tree: &mut HashMap<String, Folder>, path_buf: &Path
     let path_string = path_buf.to_string_lossy().into_owned();
 
     if let Some(folder) = file_tree.get(&path_string) {
-        return folder.total_size;
+        return folder.get_size();
     }
 
     let mut folder = path_to_folder(path_buf);
@@ -185,11 +186,10 @@ pub fn process_filepath(file_tree: &mut HashMap<String, Folder>, path_buf: &Path
 
             let subfolder_size = process_filepath(file_tree, &subfolder_path);
             child_entry.size = Some(subfolder_size);
-            folder.total_size += subfolder_size;
         }
     }
 
-    let total_size = folder.total_size.clone();
+    let total_size = folder.get_size();
 
     file_tree.insert(path_string, folder);
 

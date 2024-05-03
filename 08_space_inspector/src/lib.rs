@@ -103,14 +103,11 @@ impl App {
                 FolderEntryType::Folder => {
                     if let Ok(_) = delete_folder(&new_path) {
                         if let Some(subfolder_size) = entry.size {
-                            folder.total_size -= subfolder_size;
-
                             let mut parent_path = new_path.clone();
                             while let Some(parent) = parent_path.parent() {
                                 if let Some(parent_folder) =
                                     self.file_tree_map.get_mut(parent.to_str().unwrap())
                                 {
-                                    parent_folder.total_size -= subfolder_size;
                                     if let Some(parent_folder_entry) =
                                         parent_folder.entries.get_mut(parent_folder.cursor_index)
                                     {
@@ -134,14 +131,11 @@ impl App {
                 FolderEntryType::File => {
                     if let Ok(_) = delete_file(&new_path) {
                         if let Some(subfile_size) = entry.size {
-                            folder.total_size -= subfile_size;
-
                             let mut parent_path = new_path.clone();
                             while let Some(parent) = parent_path.parent() {
                                 if let Some(parent_folder) =
                                     self.file_tree_map.get_mut(parent.to_str().unwrap())
                                 {
-                                    parent_folder.total_size -= subfile_size;
                                     if let Some(parent_folder_entry) =
                                         parent_folder.entries.get_mut(parent_folder.cursor_index)
                                     {
@@ -158,9 +152,6 @@ impl App {
                         folder.remove_selected_file();
                         self.file_tree_map.insert(self.current_path.clone(), folder);
                     }
-                    return;
-                }
-                FolderEntryType::Unknown => {
                     return;
                 }
             }
@@ -191,9 +182,6 @@ impl App {
                 FolderEntryType::File => {
                     return;
                 }
-                FolderEntryType::Unknown => {
-                    return;
-                }
             }
         }
     }
@@ -207,6 +195,3 @@ impl App {
 
 #[path = "tests.rs"]
 mod tests;
-
-// #[path = "tests2.rs"]
-// mod tests2;
