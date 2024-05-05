@@ -30,24 +30,25 @@ impl Widget for &mut App {
 
         let maybe_folder = self.get_current_folder();
 
-        render_title(header_area, buf, maybe_folder, &self.sort_by);
-        render_table(rest_area, buf, maybe_folder, &self.confirming_deletion);
+        render_title(header_area, buf, maybe_folder);
+        render_table(
+            rest_area,
+            buf,
+            maybe_folder,
+            &self.confirming_deletion,
+            &self.sort_by,
+        );
         render_footer(footer_area, buf);
     }
 }
 
-fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>, sort_by: &SortBy) {
+fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
     if let Some(folder) = maybe_folder {
-        let sort_by_text = match sort_by {
-            SortBy::Title => String::from("Name"),
-            SortBy::Size => String::from("Size"),
-        };
         Paragraph::new(format!(
-            "{} | {} | {} | Sort by: {}",
+            "{} | {} | {}",
             TEXT_TITLE,
             folder.title,
             format_file_size(folder.get_size()),
-            sort_by_text
         ))
         .bold()
         .centered()
@@ -60,6 +61,7 @@ fn render_table(
     buf: &mut Buffer,
     maybe_folder: Option<&Folder>,
     confirming_deletion: &bool,
+    sort_by: &SortBy,
 ) {
     if let Some(folder) = maybe_folder {
         let block = Block::default()
@@ -74,7 +76,12 @@ fn render_table(
             Style::default().bg(TEXT_SELECTED_BG)
         };
 
-        let header = ["", "Name", "Size", "Space"]
+        let header_titles = match sort_by {
+            SortBy::Title => ["", "Name ↓", "Size", "Space"],
+            SortBy::Size => ["", "Name", "Size ↓", "Space"],
+        };
+
+        let header = header_titles
             .into_iter()
             .map(Cell::from)
             .collect::<Row>()
