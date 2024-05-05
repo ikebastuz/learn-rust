@@ -122,7 +122,7 @@ fn folder_to_rows(folder: &Folder) -> Vec<Row> {
         .to_list()
         .iter()
         .map(|item| {
-            let (item_size, bar) = match item.size {
+            let (item_size, bar, color) = match item.size {
                 Some(size) => {
                     let percent = if max_entry_size == 0 {
                         0
@@ -130,42 +130,38 @@ fn folder_to_rows(folder: &Folder) -> Vec<Row> {
                         (size * TABLE_SPACE_WIDTH as u64 / max_entry_size).div_euclid(1)
                     };
                     let mut b = String::new();
+                    let color = calculate_color(percent, max_entry_size);
                     for _ in 0..percent {
                         b.push('█');
                     }
-                    (format!("{}", format_file_size(size)), b)
+                    (Text::from(format_file_size(size)), Text::from(b), color)
                 }
-                None => (TEXT_UNKNOWN.to_string(), " ".to_string()),
+                None => (Text::from(TEXT_UNKNOWN), Text::from(" "), NORMAL_ROW_COLOR),
             };
             let prefix = match item.kind == FolderEntryType::Folder {
-                true => "[ ]",
-                false => "   ",
+                true => Text::from("[ ]"),
+                false => Text::from("   "),
             };
+            let s = Style::default().fg(color);
             Row::new(vec![
-                prefix.to_string(),
-                format!("{}", item.title.clone()),
+                prefix,
+                Text::from(item.title.clone()),
                 item_size,
-                bar,
+                bar.style(s),
             ])
         })
         .collect()
 }
 
-// fn render_footer(area: Rect, buf: &mut Buffer) {
-//     Paragraph::new(TEXT_HINT).centered().render(area, buf);
-// }
-
 fn render_footer(area: Rect, buf: &mut Buffer) {
-    // Use two lines for the footer
-
-    let vl = Layout::vertical([Constraint::Min(1), Constraint::Min(1)]);
-    let [a, b] = vl.areas(area);
-
-    // Divide the area for two lines
-
-    // Render text on both lines
-    Paragraph::new(TEXT_HINT_L1).centered().render(a, buf);
-    Paragraph::new(TEXT_HINT_L2).centered().render(b, buf); // Replace "Line 2" with your desired text
+    let vertical_layout = Layout::vertical([Constraint::Min(1), Constraint::Min(1)]);
+    let [first_line, second_line] = vertical_layout.areas(area);
+    Paragraph::new(TEXT_HINT_L1)
+        .centered()
+        .render(first_line, buf);
+    Paragraph::new(TEXT_HINT_L2)
+        .centered()
+        .render(second_line, buf);
 }
 
 fn format_file_size(size: u64) -> String {
@@ -185,4 +181,20 @@ fn format_file_size(size: u64) -> String {
     } else {
         format!("{} bytes", size)
     }
+}
+
+fn calculate_color(percent: u64, _max_entry_size: u64) -> Color {
+    let colors = [
+        Color::Rgb(0, 128, 0),    // Green
+        Color::Rgb(50, 205, 50),  // LimeGreen
+        Color::Rgb(173, 255, 47), // GreenYellow
+        Color::Rgb(255, 255, 0),  // Yellow
+        Color::Rgb(255, 165, 0),  // Orange
+        Color::Rgb(255, 0, 0),    // Red
+    ];
+
+    let index =
+        ((percent as f64 / TABLE_SPACE_WIDTH as f64) * (colors.len() - 1) as f64).round() as usize;
+
+    colors[index]
 }

@@ -107,7 +107,7 @@ impl App {
                     folder.sort_by_size();
                 }
                 SortBy::Title => {
-                    folder.entries.sort();
+                    folder.sort_by_title();
                 }
             }
             self.set_current_folder(folder);

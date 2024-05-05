@@ -69,6 +69,10 @@ impl Folder {
         max_entry_size
     }
 
+    pub fn sort_by_title(&mut self) {
+        self.entries.sort();
+    }
+
     pub fn sort_by_size(&mut self) {
         self.entries.sort_by(|a, b| {
             if a.kind == FolderEntryType::Parent || b.kind == FolderEntryType::Parent {

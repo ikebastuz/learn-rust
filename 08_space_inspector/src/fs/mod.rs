@@ -44,8 +44,7 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
             }
         }
     }
-
-    folder.entries.sort();
+    folder.sort_by_title();
 
     folder
 }
