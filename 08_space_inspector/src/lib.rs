@@ -1,3 +1,4 @@
+use opener;
 use std::io;
 use std::{collections::HashMap, path::PathBuf};
 
@@ -262,7 +263,11 @@ impl App {
                 FolderEntryType::Folder => {
                     self.navigate_to_child(&entry.title);
                 }
-                FolderEntryType::File => {}
+                FolderEntryType::File => {
+                    let mut file_name = PathBuf::from(&self.current_path.clone());
+                    file_name.push(entry.title.clone());
+                    let _ = opener::open(file_name);
+                }
             }
         }
         self.ui_config.confirming_deletion = false;

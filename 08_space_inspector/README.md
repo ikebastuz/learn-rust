@@ -6,3 +6,4 @@
 - [ ] - Indexing / caching / refreshing
 - [x] - Delete to Trash bin
 - [ ] - PageUp/PageDown / g/G navigation
+- [x] - Open file with system app
