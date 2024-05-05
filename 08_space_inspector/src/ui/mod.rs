@@ -31,7 +31,7 @@ impl Widget for &mut App {
         let maybe_folder = self.get_current_folder();
 
         render_title(header_area, buf, maybe_folder, &self.sort_by);
-        render_table(rest_area, buf, maybe_folder, self.confirming_deletion);
+        render_table(rest_area, buf, maybe_folder, &self.confirming_deletion);
         render_footer(footer_area, buf);
     }
 }
@@ -59,7 +59,7 @@ fn render_table(
     area: Rect,
     buf: &mut Buffer,
     maybe_folder: Option<&Folder>,
-    confirming_deletion: bool,
+    confirming_deletion: &bool,
 ) {
     if let Some(folder) = maybe_folder {
         let block = Block::default()
@@ -68,7 +68,7 @@ fn render_table(
             .bg(NORMAL_ROW_COLOR);
 
         let header_style = Style::default().fg(TABLE_HEADER_FG).bg(TABLE_HEADER_BG);
-        let selected_style = if confirming_deletion {
+        let selected_style = if *confirming_deletion {
             Style::default().bg(TEXT_PRE_DELETED_BG)
         } else {
             Style::default().bg(TEXT_SELECTED_BG)
