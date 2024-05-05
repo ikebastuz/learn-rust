@@ -1,5 +1,4 @@
 use std::io;
-use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
@@ -9,13 +8,14 @@ use std::env;
 mod fs;
 mod ui;
 
-use fs::{delete_file, delete_folder, path_to_folder, Folder, FolderEntryType};
+use fs::{delete_file, delete_folder, path_to_folder, Folder, FolderEntryType, SortBy};
 
 #[derive(Debug)]
 pub struct App {
     confirming_deletion: bool,
     current_path: PathBuf,
     file_tree_map: HashMap<String, Folder>,
+    sort_by: SortBy,
 }
 
 impl App {
@@ -24,6 +24,7 @@ impl App {
             confirming_deletion: false,
             file_tree_map: HashMap::new(),
             current_path: PathBuf::from("."),
+            sort_by: SortBy::Title,
         }
     }
 
@@ -67,6 +68,7 @@ impl App {
                         Char('j') | Down => self.cursor_down(),
                         Char('k') | Up => self.cursor_up(),
                         Char('d') | Delete => self.delete_pressed(),
+                        Char('s') => self.toggle_sorting(),
                         Enter => self.enter_pressed(),
                         _ => {}
                     }
@@ -75,21 +77,50 @@ impl App {
         }
     }
 
-    fn cursor_up(&mut self) {
+    fn toggle_sorting(&mut self) {
+        match self.sort_by {
+            SortBy::Title => {
+                self.sort_by = SortBy::Size;
+            }
+            SortBy::Size => {
+                self.sort_by = SortBy::Title;
+            }
+        }
+
+        self.sort_current_folder();
+    }
+
+    fn sort_current_folder(&mut self) {
         if let Some(mut folder) = self.get_current_folder().cloned() {
+            match self.sort_by {
+                SortBy::Size => {
+                    folder.sort_by_size();
+                }
+                SortBy::Title => {
+                    folder.entries.sort();
+                }
+            }
+            self.set_current_folder(folder);
+        }
+    }
+
+    fn get_current_folder_v2(&mut self) -> Option<&mut Folder> {
+        self.file_tree_map.get_mut(&self.get_current_path_string())
+    }
+
+    fn cursor_up(&mut self) {
+        if let Some(folder) = self.get_current_folder_v2() {
             if folder.cursor_index > 0 {
                 folder.cursor_index -= 1;
-                self.set_current_folder(folder);
             }
         }
         self.confirming_deletion = false;
     }
 
     fn cursor_down(&mut self) {
-        if let Some(mut folder) = self.get_current_folder().cloned() {
+        if let Some(folder) = self.get_current_folder_v2() {
             if folder.cursor_index < folder.entries.len() - 1 {
                 folder.cursor_index += 1;
-                self.set_current_folder(folder);
             }
         }
         self.confirming_deletion = false;
@@ -186,6 +217,8 @@ impl App {
                 FolderEntryType::File => {}
             }
         }
+        // TODO: optimize, not necessary to do always
+        self.sort_current_folder();
         self.confirming_deletion = false;
     }
 
@@ -218,6 +251,7 @@ impl App {
 
             return total_size;
         }
+
         0
     }
 }

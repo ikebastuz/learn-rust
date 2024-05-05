@@ -70,6 +70,26 @@ mod tests {
         assert_eq!(app.get_current_folder().unwrap().cursor_index, index);
     }
 
+    fn assert_root_view_folder_sorted_by_title(app: &App) {
+        assert_item_at_index_title(&app, 0, "..".to_string());
+        assert_item_at_index_title(&app, 1, "a_folder".to_string());
+        assert_item_at_index_title(&app, 2, "b_folder".to_string());
+        assert_item_at_index_title(&app, 3, "c_folder".to_string());
+        assert_item_at_index_title(&app, 4, "a_root_file.txt".to_string());
+        assert_item_at_index_title(&app, 5, "d_root_file.txt".to_string());
+        assert_item_at_index_title(&app, 6, "z_root_file.txt".to_string());
+    }
+
+    fn assert_root_view_folder_sorted_by_size(app: &App) {
+        assert_item_at_index_title(&app, 0, "..".to_string());
+        assert_item_at_index_title(&app, 1, "b_folder".to_string());
+        assert_item_at_index_title(&app, 2, "c_folder".to_string());
+        assert_item_at_index_title(&app, 3, "a_folder".to_string());
+        assert_item_at_index_title(&app, 4, "d_root_file.txt".to_string());
+        assert_item_at_index_title(&app, 5, "a_root_file.txt".to_string());
+        assert_item_at_index_title(&app, 6, "z_root_file.txt".to_string());
+    }
+
     mod file_tree {
         use super::*;
 
@@ -90,13 +110,52 @@ mod tests {
         fn test_ordering_by_title() {
             let app = setup_app_view();
 
+            assert_root_view_folder_sorted_by_title(&app);
+        }
+
+        #[test]
+        fn test_switching_ordering_to_size() {
+            let mut app = setup_app_view();
+
+            app.toggle_sorting();
+
+            assert_root_view_folder_sorted_by_size(&app);
+        }
+
+        #[test]
+        fn test_ordering_persists_after_navigating_into_folder() {
+            let mut app = setup_app_view();
+
+            app.toggle_sorting();
+            app.cursor_down();
+            app.enter_pressed();
+
             assert_item_at_index_title(&app, 0, "..".to_string());
-            assert_item_at_index_title(&app, 1, "a_folder".to_string());
-            assert_item_at_index_title(&app, 2, "b_folder".to_string());
-            assert_item_at_index_title(&app, 3, "c_folder".to_string());
-            assert_item_at_index_title(&app, 4, "a_root_file.txt".to_string());
-            assert_item_at_index_title(&app, 5, "d_root_file.txt".to_string());
-            assert_item_at_index_title(&app, 6, "z_root_file.txt".to_string());
+            assert_item_at_index_title(&app, 1, "folder2_file3.txt".to_string());
+            assert_item_at_index_title(&app, 2, "folder2_file2.txt".to_string());
+            assert_item_at_index_title(&app, 3, "folder2_file1.txt".to_string());
+        }
+
+        #[test]
+        fn test_ordering_persists_after_navigating_to_parent() {
+            let mut app = setup_app_view();
+
+            app.cursor_down();
+            app.enter_pressed();
+            app.toggle_sorting();
+            app.enter_pressed();
+
+            assert_root_view_folder_sorted_by_size(&app);
+        }
+
+        #[test]
+        fn test_switching_ordering_back_to_title() {
+            let mut app = setup_app_view();
+
+            app.toggle_sorting();
+            app.toggle_sorting();
+
+            assert_root_view_folder_sorted_by_title(&app);
         }
 
         #[test]

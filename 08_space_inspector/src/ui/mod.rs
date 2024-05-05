@@ -1,4 +1,5 @@
 use crate::fs::FolderEntryType;
+use crate::fs::SortBy;
 use crate::App;
 use crate::Folder;
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
@@ -16,7 +17,7 @@ pub const TEXT_UNKNOWN: &str = "N/A";
 pub const TEXT_PARENT_DIR: &str = "..";
 const TEXT_TITLE: &str = "Space inspector";
 const TEXT_HINT: &str =
-    "\nUse jk/↓↑ to move | \"Enter\" to select dir | \"d-d\" to delete | \"q\" to exit";
+    "\nUse jk/↓↑ - move | \"Enter\" - select dir | \"d-d\" - delete | \"s\" - sort | \"q\" - exit";
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -29,19 +30,24 @@ impl Widget for &mut App {
 
         let maybe_folder = self.get_current_folder();
 
-        render_title(header_area, buf, maybe_folder);
+        render_title(header_area, buf, maybe_folder, &self.sort_by);
         render_table(rest_area, buf, maybe_folder, self.confirming_deletion);
         render_footer(footer_area, buf);
     }
 }
 
-fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
+fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>, sort_by: &SortBy) {
     if let Some(folder) = maybe_folder {
+        let sort_by_text = match sort_by {
+            SortBy::Title => String::from("Name"),
+            SortBy::Size => String::from("Size"),
+        };
         Paragraph::new(format!(
-            "{} | {} | {}",
+            "{} | {} | {} | Sort by: {}",
             TEXT_TITLE,
             folder.title,
-            format_file_size(folder.get_size())
+            format_file_size(folder.get_size()),
+            sort_by_text
         ))
         .bold()
         .centered()

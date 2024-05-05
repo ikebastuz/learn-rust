@@ -1,5 +1,5 @@
 ## TODO
-- [ ] - Sort by size
+- [x] - Sort by size
 - [ ] - Async subfolder calculation
 - [ ] - Better list scrolling
 - [ ] - Maybe auto-center cursor

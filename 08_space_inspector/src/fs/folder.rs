@@ -1,6 +1,7 @@
 use crate::ui::TEXT_PARENT_DIR;
 
 use crate::fs::folder_entry::{FolderEntry, FolderEntryType};
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone)]
 pub struct Folder {
@@ -66,5 +67,32 @@ impl Folder {
         }
 
         max_entry_size
+    }
+
+    pub fn sort_by_size(&mut self) {
+        self.entries.sort_by(|a, b| {
+            if a.kind == FolderEntryType::Parent || b.kind == FolderEntryType::Parent {
+                // If either entry is a Parent, it should come before
+                if a.kind == FolderEntryType::Parent && b.kind != FolderEntryType::Parent {
+                    Ordering::Less
+                } else if a.kind != FolderEntryType::Parent && b.kind == FolderEntryType::Parent {
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
+                }
+            } else if let (Some(size_a), Some(size_b)) = (a.size, b.size) {
+                // Sort by size in descending order
+                size_b.cmp(&size_a)
+            } else if a.size.is_some() {
+                // Entries with size come before those without
+                Ordering::Greater
+            } else if b.size.is_some() {
+                // Entries without size come after those with
+                Ordering::Less
+            } else {
+                // If both entries have no size, maintain their order
+                Ordering::Equal
+            }
+        });
     }
 }

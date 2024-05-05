@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::{read_dir, remove_dir_all, remove_file};
 use std::path::PathBuf;
 
@@ -8,6 +7,12 @@ mod folder;
 mod folder_entry;
 pub use folder::Folder;
 pub use folder_entry::{FolderEntry, FolderEntryType};
+
+#[derive(Debug)]
+pub enum SortBy {
+    Title,
+    Size,
+}
 
 pub fn path_to_folder(path: &PathBuf) -> Folder {
     let folder_name = path
