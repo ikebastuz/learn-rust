@@ -349,10 +349,10 @@ mod tests {
             let mut app = setup_app_edit();
             app.on_delete();
             app.on_cursor_down();
-            assert_eq!(app.confirming_deletion, false);
+            assert_eq!(app.ui_config.confirming_deletion, false);
             app.on_delete();
             app.on_cursor_up();
-            assert_eq!(app.confirming_deletion, false);
+            assert_eq!(app.ui_config.confirming_deletion, false);
             cleanup_testing_files();
         }
 
@@ -363,7 +363,7 @@ mod tests {
             app.on_cursor_down();
             app.on_delete();
             app.on_enter();
-            assert_eq!(app.confirming_deletion, false);
+            assert_eq!(app.ui_config.confirming_deletion, false);
             cleanup_testing_files();
         }
 
@@ -374,7 +374,7 @@ mod tests {
             app.on_cursor_down();
             app.on_delete();
             app.on_delete();
-            assert_eq!(app.confirming_deletion, false);
+            assert_eq!(app.ui_config.confirming_deletion, false);
             cleanup_testing_files();
         }
 
@@ -386,7 +386,7 @@ mod tests {
             app.on_cursor_down();
             app.on_delete();
             app.on_delete();
-            assert_eq!(app.confirming_deletion, false);
+            assert_eq!(app.ui_config.confirming_deletion, false);
             cleanup_testing_files();
         }
 

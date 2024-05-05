@@ -4,3 +4,4 @@
 - [ ] - Better list scrolling
 - [ ] - Maybe auto-center cursor
 - [ ] - Indexing / caching / refreshing
+- [ ] - Delete to Trash bin

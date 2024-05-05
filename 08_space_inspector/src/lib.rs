@@ -9,27 +9,28 @@ mod fs;
 mod ui;
 
 use fs::{delete_file, delete_folder, path_to_folder, Folder, FolderEntryType, SortBy};
+use ui::UIConfig;
 
 #[derive(Debug)]
 pub struct App {
-    confirming_deletion: bool,
     current_path: PathBuf,
     file_tree_map: HashMap<String, Folder>,
-    sort_by: SortBy,
+    ui_config: UIConfig,
 }
 
 enum DiffKind {
-    Add,
     Subtract,
 }
 
 impl App {
     pub fn new() -> Self {
         App {
-            confirming_deletion: false,
             file_tree_map: HashMap::new(),
             current_path: PathBuf::from("."),
-            sort_by: SortBy::Title,
+            ui_config: UIConfig {
+                confirming_deletion: false,
+                sort_by: SortBy::Title,
+            },
         }
     }
 
@@ -84,12 +85,12 @@ impl App {
     }
 
     fn on_toggle_sorting(&mut self) {
-        match self.sort_by {
+        match self.ui_config.sort_by {
             SortBy::Title => {
-                self.sort_by = SortBy::Size;
+                self.ui_config.sort_by = SortBy::Size;
             }
             SortBy::Size => {
-                self.sort_by = SortBy::Title;
+                self.ui_config.sort_by = SortBy::Title;
             }
         }
 
@@ -102,7 +103,7 @@ impl App {
 
     fn sort_current_folder(&mut self) {
         if let Some(mut folder) = self.get_current_folder().cloned() {
-            match self.sort_by {
+            match self.ui_config.sort_by {
                 SortBy::Size => {
                     folder.sort_by_size();
                 }
@@ -124,7 +125,7 @@ impl App {
                 folder.cursor_index -= 1;
             }
         }
-        self.confirming_deletion = false;
+        self.ui_config.confirming_deletion = false;
     }
 
     fn on_cursor_down(&mut self) {
@@ -133,7 +134,7 @@ impl App {
                 folder.cursor_index += 1;
             }
         }
-        self.confirming_deletion = false;
+        self.ui_config.confirming_deletion = false;
     }
 
     fn get_current_folder(&self) -> Option<&Folder> {
@@ -160,7 +161,6 @@ impl App {
                     if let Some(size) = parent_folder_entry.size.as_mut() {
                         match diff_kind {
                             DiffKind::Subtract => *size -= entry_diff,
-                            DiffKind::Add => *size += entry_diff,
                         }
                     }
                 }
@@ -181,8 +181,8 @@ impl App {
             match entry.kind {
                 FolderEntryType::Parent => {}
                 FolderEntryType::Folder => {
-                    if !self.confirming_deletion {
-                        self.confirming_deletion = true;
+                    if !self.ui_config.confirming_deletion {
+                        self.ui_config.confirming_deletion = true;
                     } else {
                         if let Ok(_) = delete_folder(&to_delete_path) {
                             if let Some(subfolder_size) = entry.size {
@@ -196,13 +196,13 @@ impl App {
                             let path_string = to_delete_path.to_string_lossy().into_owned();
                             self.file_tree_map.remove(&path_string);
                             self.set_current_folder(folder);
-                            self.confirming_deletion = false;
+                            self.ui_config.confirming_deletion = false;
                         }
                     }
                 }
                 FolderEntryType::File => {
-                    if !self.confirming_deletion {
-                        self.confirming_deletion = true;
+                    if !self.ui_config.confirming_deletion {
+                        self.ui_config.confirming_deletion = true;
                     } else {
                         if let Ok(_) = delete_file(&to_delete_path) {
                             if let Some(subfile_size) = entry.size {
@@ -214,7 +214,7 @@ impl App {
                             }
                             folder.remove_selected();
                             self.set_current_folder(folder);
-                            self.confirming_deletion = false;
+                            self.ui_config.confirming_deletion = false;
                         }
                     }
                 }
@@ -253,7 +253,7 @@ impl App {
                 FolderEntryType::File => {}
             }
         }
-        self.confirming_deletion = false;
+        self.ui_config.confirming_deletion = false;
     }
 
     fn process_filepath(&mut self, path_buf: &PathBuf) -> u64 {

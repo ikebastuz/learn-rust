@@ -20,6 +20,12 @@ const TEXT_HINT_L1: &str =
     "Navigation: jk/↓↑ - move | \"Enter\" - select dir | \"Backspace\" - go to parent";
 const TEXT_HINT_L2: &str = "Actions: \"d-d\" - delete | \"s\" - sort | \"q\" - exit";
 
+#[derive(Debug)]
+pub struct UIConfig {
+    pub confirming_deletion: bool,
+    pub sort_by: SortBy,
+}
+
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let vertical = Layout::vertical([
@@ -36,8 +42,8 @@ impl Widget for &mut App {
             rest_area,
             buf,
             maybe_folder,
-            &self.confirming_deletion,
-            &self.sort_by,
+            &self.ui_config.confirming_deletion,
+            &self.ui_config.sort_by,
         );
         render_footer(footer_area, buf);
     }
