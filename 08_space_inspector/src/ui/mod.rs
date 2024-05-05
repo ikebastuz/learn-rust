@@ -16,15 +16,16 @@ const TABLE_SPACE_WIDTH: usize = 40;
 pub const TEXT_UNKNOWN: &str = "N/A";
 pub const TEXT_PARENT_DIR: &str = "..";
 const TEXT_TITLE: &str = "Space inspector";
-const TEXT_HINT: &str =
-    "\nUse jk/↓↑ - move | \"Enter\" - select dir | \"d-d\" - delete | \"s\" - sort | \"q\" - exit";
+const TEXT_HINT_L1: &str =
+    "Navigation: jk/↓↑ - move | \"Enter\" - select dir | \"Backspace\" - go to parent";
+const TEXT_HINT_L2: &str = "Actions: \"d-d\" - delete | \"s\" - sort | \"q\" - exit";
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let vertical = Layout::vertical([
             Constraint::Length(2),
             Constraint::Fill(1),
-            Constraint::Length(2),
+            Constraint::Length(3),
         ]);
         let [header_area, rest_area, footer_area] = vertical.areas(area);
 
@@ -150,8 +151,21 @@ fn folder_to_rows(folder: &Folder) -> Vec<Row> {
         .collect()
 }
 
+// fn render_footer(area: Rect, buf: &mut Buffer) {
+//     Paragraph::new(TEXT_HINT).centered().render(area, buf);
+// }
+
 fn render_footer(area: Rect, buf: &mut Buffer) {
-    Paragraph::new(TEXT_HINT).centered().render(area, buf);
+    // Use two lines for the footer
+
+    let vl = Layout::vertical([Constraint::Min(1), Constraint::Min(1)]);
+    let [a, b] = vl.areas(area);
+
+    // Divide the area for two lines
+
+    // Render text on both lines
+    Paragraph::new(TEXT_HINT_L1).centered().render(a, buf);
+    Paragraph::new(TEXT_HINT_L2).centered().render(b, buf); // Replace "Line 2" with your desired text
 }
 
 fn format_file_size(size: u64) -> String {

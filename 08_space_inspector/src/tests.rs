@@ -117,7 +117,7 @@ mod tests {
         fn test_switching_ordering_to_size() {
             let mut app = setup_app_view();
 
-            app.toggle_sorting();
+            app.on_toggle_sorting();
 
             assert_root_view_folder_sorted_by_size(&app);
         }
@@ -126,9 +126,9 @@ mod tests {
         fn test_ordering_persists_after_navigating_into_folder() {
             let mut app = setup_app_view();
 
-            app.toggle_sorting();
-            app.cursor_down();
-            app.enter_pressed();
+            app.on_toggle_sorting();
+            app.on_cursor_down();
+            app.on_enter();
 
             assert_item_at_index_title(&app, 0, "..".to_string());
             assert_item_at_index_title(&app, 1, "folder2_file3.txt".to_string());
@@ -140,10 +140,10 @@ mod tests {
         fn test_ordering_persists_after_navigating_to_parent() {
             let mut app = setup_app_view();
 
-            app.cursor_down();
-            app.enter_pressed();
-            app.toggle_sorting();
-            app.enter_pressed();
+            app.on_cursor_down();
+            app.on_enter();
+            app.on_toggle_sorting();
+            app.on_enter();
 
             assert_root_view_folder_sorted_by_size(&app);
         }
@@ -152,8 +152,8 @@ mod tests {
         fn test_switching_ordering_back_to_title() {
             let mut app = setup_app_view();
 
-            app.toggle_sorting();
-            app.toggle_sorting();
+            app.on_toggle_sorting();
+            app.on_toggle_sorting();
 
             assert_root_view_folder_sorted_by_title(&app);
         }
@@ -177,10 +177,10 @@ mod tests {
 
             assert_cursor_index(&mut app, 0);
 
-            app.cursor_down();
+            app.on_cursor_down();
             assert_cursor_index(&mut app, 1);
 
-            app.cursor_up();
+            app.on_cursor_up();
             assert_cursor_index(&mut app, 0);
         }
 
@@ -191,7 +191,7 @@ mod tests {
             assert_cursor_index(&mut app, 0);
 
             for _ in 0..10 {
-                app.cursor_up();
+                app.on_cursor_up();
             }
 
             assert_cursor_index(&mut app, 0);
@@ -202,7 +202,7 @@ mod tests {
             let mut app = setup_app_view();
 
             for _ in 0..20 {
-                app.cursor_down();
+                app.on_cursor_down();
             }
             assert_cursor_index(&mut app, 6);
         }
@@ -215,8 +215,8 @@ mod tests {
         fn updates_current_tree_when_enters_subfolder() {
             let mut app = setup_app_view();
 
-            app.cursor_down();
-            app.enter_pressed();
+            app.on_cursor_down();
+            app.on_enter();
 
             assert_cursor_index(&app, 0);
             assert_parent_folder_a_state(&app);
@@ -226,12 +226,12 @@ mod tests {
         fn navigates_back_to_parent_folder() {
             let mut app = setup_app_view();
 
-            app.cursor_down();
-            app.enter_pressed();
+            app.on_cursor_down();
+            app.on_enter();
 
             assert_parent_folder_a_state(&app);
 
-            app.enter_pressed();
+            app.on_enter();
             assert_parent_folder_state(&app);
             assert_cursor_index(&app, 1);
         }
@@ -240,14 +240,14 @@ mod tests {
         fn does_nothing_when_tries_to_enter_file() {
             let mut app = setup_app_view();
 
-            app.cursor_down();
-            app.cursor_down();
-            app.cursor_down();
-            app.cursor_down();
-            app.cursor_down();
+            app.on_cursor_down();
+            app.on_cursor_down();
+            app.on_cursor_down();
+            app.on_cursor_down();
+            app.on_cursor_down();
             assert_cursor_index(&app, 5);
 
-            app.enter_pressed();
+            app.on_enter();
 
             assert_cursor_index(&app, 5);
             assert_parent_folder_state(&app);
@@ -325,8 +325,8 @@ mod tests {
             let mut app = setup_app_edit();
             assert_cursor_index(&app, 0);
             assert_delete_folder_state(&app);
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_delete();
+            app.on_delete();
             assert_delete_folder_state(&app);
             cleanup_testing_files();
         }
@@ -336,8 +336,8 @@ mod tests {
             create_testing_files();
             let mut app = setup_app_edit();
             assert_delete_folder_state(&app);
-            app.cursor_down();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_delete();
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 3);
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 1);
             cleanup_testing_files();
@@ -347,11 +347,11 @@ mod tests {
         fn resets_delete_confirmation_on_cursor_move() {
             create_testing_files();
             let mut app = setup_app_edit();
-            app.delete_pressed();
-            app.cursor_down();
+            app.on_delete();
+            app.on_cursor_down();
             assert_eq!(app.confirming_deletion, false);
-            app.delete_pressed();
-            app.cursor_up();
+            app.on_delete();
+            app.on_cursor_up();
             assert_eq!(app.confirming_deletion, false);
             cleanup_testing_files();
         }
@@ -360,9 +360,9 @@ mod tests {
         fn resets_delete_confirmation_on_folder_enter() {
             create_testing_files();
             let mut app = setup_app_edit();
-            app.cursor_down();
-            app.delete_pressed();
-            app.enter_pressed();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_enter();
             assert_eq!(app.confirming_deletion, false);
             cleanup_testing_files();
         }
@@ -371,9 +371,9 @@ mod tests {
         fn resets_delete_confirmation_after_deleting_folder() {
             create_testing_files();
             let mut app = setup_app_edit();
-            app.cursor_down();
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_delete();
             assert_eq!(app.confirming_deletion, false);
             cleanup_testing_files();
         }
@@ -382,10 +382,10 @@ mod tests {
         fn resets_delete_confirmation_after_deleting_file() {
             create_testing_files();
             let mut app = setup_app_edit();
-            app.cursor_down();
-            app.cursor_down();
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_delete();
             assert_eq!(app.confirming_deletion, false);
             cleanup_testing_files();
         }
@@ -395,9 +395,9 @@ mod tests {
             create_testing_files();
             let mut app = setup_app_edit();
             assert_delete_folder_state(&app);
-            app.cursor_down();
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_delete();
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 3);
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 0);
             cleanup_testing_files();
@@ -408,10 +408,10 @@ mod tests {
             create_testing_files();
             let mut app = setup_app_edit();
             assert_delete_folder_state(&app);
-            app.cursor_down();
-            app.cursor_down();
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_delete();
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::File).len(), 2);
             assert_eq!(get_entry_by_kind(&app, FolderEntryType::Folder).len(), 1);
             cleanup_testing_files();
@@ -425,10 +425,10 @@ mod tests {
             let root_entry = app.get_current_folder().unwrap();
             assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
-            app.cursor_down();
-            app.cursor_down();
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_delete();
 
             let root_entry_updated = app.get_current_folder().unwrap();
             assert_eq!(root_entry_updated.get_size(), (TEST_FILE_SIZE * 8) as u64);
@@ -444,29 +444,29 @@ mod tests {
             let root_entry = app.get_current_folder().unwrap();
             assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
-            app.cursor_down();
-            app.enter_pressed();
+            app.on_cursor_down();
+            app.on_enter();
 
             let folder_1 = app.get_current_folder().unwrap();
             assert_eq!(folder_1.get_size(), (TEST_FILE_SIZE * 6) as u64);
 
-            app.cursor_down();
-            app.enter_pressed();
+            app.on_cursor_down();
+            app.on_enter();
 
             let folder_2 = app.get_current_folder().unwrap();
             assert_eq!(folder_2.get_size(), (TEST_FILE_SIZE * 3) as u64);
 
-            app.cursor_down();
-            app.cursor_down();
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_delete();
 
             let folder_2_upd = app.get_current_folder().unwrap();
             assert_eq!(folder_2_upd.get_size(), (TEST_FILE_SIZE * 2) as u64);
 
-            app.cursor_up();
-            app.cursor_up();
-            app.enter_pressed();
+            app.on_cursor_up();
+            app.on_cursor_up();
+            app.on_enter();
 
             let folder_1_upd = app.get_current_folder().unwrap();
             assert_eq!(folder_1_upd.get_size(), (TEST_FILE_SIZE * 5) as u64);
@@ -475,8 +475,8 @@ mod tests {
                 (TEST_FILE_SIZE * 2) as u64
             );
 
-            app.cursor_up();
-            app.enter_pressed();
+            app.on_cursor_up();
+            app.on_enter();
 
             let root_entry_upd = app.get_current_folder().unwrap();
             assert_eq!(root_entry_upd.get_size(), (TEST_FILE_SIZE * 8) as u64);
@@ -496,21 +496,21 @@ mod tests {
             let root_entry = app.get_current_folder().unwrap();
             assert_eq!(root_entry.get_size(), (TEST_FILE_SIZE * 9) as u64);
 
-            app.cursor_down();
-            app.enter_pressed();
+            app.on_cursor_down();
+            app.on_enter();
 
             let folder_1 = app.get_current_folder().unwrap();
             assert_eq!(folder_1.get_size(), (TEST_FILE_SIZE * 6) as u64);
 
-            app.cursor_down();
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_cursor_down();
+            app.on_delete();
+            app.on_delete();
 
             let folder_1_upd = app.get_current_folder().unwrap();
             assert_eq!(folder_1_upd.get_size(), (TEST_FILE_SIZE * 3) as u64);
 
-            app.cursor_up();
-            app.enter_pressed();
+            app.on_cursor_up();
+            app.on_enter();
 
             let root_entry_upd = app.get_current_folder().unwrap();
             assert_eq!(root_entry_upd.get_size(), (TEST_FILE_SIZE * 6) as u64);
@@ -528,12 +528,12 @@ mod tests {
             let mut app = setup_app_edit();
 
             for _ in 1..20 {
-                app.cursor_down();
+                app.on_cursor_down();
             }
 
             assert_eq!(app.get_current_folder().unwrap().cursor_index, 4);
-            app.delete_pressed();
-            app.delete_pressed();
+            app.on_delete();
+            app.on_delete();
             assert_eq!(app.get_current_folder().unwrap().cursor_index, 3);
 
             cleanup_testing_files();

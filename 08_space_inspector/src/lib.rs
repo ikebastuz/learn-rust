@@ -65,11 +65,12 @@ impl App {
                     use KeyCode::*;
                     match key.code {
                         Char('q') | Esc => return Ok(()),
-                        Char('j') | Down => self.cursor_down(),
-                        Char('k') | Up => self.cursor_up(),
-                        Char('d') | Delete => self.delete_pressed(),
-                        Char('s') => self.toggle_sorting(),
-                        Enter => self.enter_pressed(),
+                        Char('j') | Down => self.on_cursor_down(),
+                        Char('k') | Up => self.on_cursor_up(),
+                        Char('d') | Delete => self.on_delete(),
+                        Char('s') => self.on_toggle_sorting(),
+                        Backspace => self.on_backspace(),
+                        Enter => self.on_enter(),
                         _ => {}
                     }
                 }
@@ -77,7 +78,7 @@ impl App {
         }
     }
 
-    fn toggle_sorting(&mut self) {
+    fn on_toggle_sorting(&mut self) {
         match self.sort_by {
             SortBy::Title => {
                 self.sort_by = SortBy::Size;
@@ -88,6 +89,10 @@ impl App {
         }
 
         self.sort_current_folder();
+    }
+
+    fn on_backspace(&mut self) {
+        self.navigate_to_parent();
     }
 
     fn sort_current_folder(&mut self) {
@@ -108,7 +113,7 @@ impl App {
         self.file_tree_map.get_mut(&self.get_current_path_string())
     }
 
-    fn cursor_up(&mut self) {
+    fn on_cursor_up(&mut self) {
         if let Some(folder) = self.get_current_folder_v2() {
             if folder.cursor_index > 0 {
                 folder.cursor_index -= 1;
@@ -117,7 +122,7 @@ impl App {
         self.confirming_deletion = false;
     }
 
-    fn cursor_down(&mut self) {
+    fn on_cursor_down(&mut self) {
         if let Some(folder) = self.get_current_folder_v2() {
             if folder.cursor_index < folder.entries.len() - 1 {
                 folder.cursor_index += 1;
@@ -153,7 +158,7 @@ impl App {
         }
     }
 
-    fn delete_pressed(&mut self) {
+    fn on_delete(&mut self) {
         if let Some(mut folder) = self.get_current_folder().cloned() {
             let entry = folder.get_selected_entry();
 
@@ -196,29 +201,37 @@ impl App {
         }
     }
 
-    fn enter_pressed(&mut self) {
+    fn navigate_to_parent(&mut self) {
+        if let Some(parent) = PathBuf::from(&self.current_path).parent() {
+            let parent_buf = parent.to_path_buf();
+            self.current_path = parent_buf.clone();
+            self.process_filepath(&parent_buf);
+            self.sort_current_folder();
+        }
+    }
+
+    fn navigate_to_child(&mut self, title: &String) {
+        let mut new_path = PathBuf::from(&self.current_path);
+        new_path.push(title);
+        self.current_path = new_path;
+        self.process_filepath(&PathBuf::from(&self.current_path));
+        self.sort_current_folder();
+    }
+
+    fn on_enter(&mut self) {
         if let Some(folder) = self.get_current_folder().cloned() {
             let entry = folder.get_selected_entry();
 
             match entry.kind {
                 FolderEntryType::Parent => {
-                    if let Some(parent) = PathBuf::from(&self.current_path).parent() {
-                        let parent_buf = parent.to_path_buf();
-                        self.current_path = parent_buf.clone();
-                        self.process_filepath(&parent_buf);
-                    }
+                    self.navigate_to_parent();
                 }
                 FolderEntryType::Folder => {
-                    let mut new_path = PathBuf::from(&self.current_path);
-                    new_path.push(&entry.title);
-                    self.current_path = new_path;
-                    self.process_filepath(&PathBuf::from(&self.current_path));
+                    self.navigate_to_child(&entry.title);
                 }
                 FolderEntryType::File => {}
             }
         }
-        // TODO: optimize, not necessary to do always
-        self.sort_current_folder();
         self.confirming_deletion = false;
     }
 
