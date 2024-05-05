@@ -18,6 +18,11 @@ pub struct App {
     sort_by: SortBy,
 }
 
+enum DiffKind {
+    Add,
+    Subtract,
+}
+
 impl App {
     pub fn new() -> Self {
         App {
@@ -140,7 +145,12 @@ impl App {
             .insert(self.get_current_path_string(), folder);
     }
 
-    fn propagate_size_update_upwards(&mut self, to_delete_path: &PathBuf, deleted_entry_size: u64) {
+    fn propagate_size_update_upwards(
+        &mut self,
+        to_delete_path: &PathBuf,
+        entry_diff: u64,
+        diff_kind: DiffKind,
+    ) {
         let mut parent_path = to_delete_path.clone();
         while let Some(parent) = parent_path.parent() {
             if let Some(parent_folder) = self.file_tree_map.get_mut(parent.to_str().unwrap()) {
@@ -148,7 +158,10 @@ impl App {
                     parent_folder.entries.get_mut(parent_folder.cursor_index)
                 {
                     if let Some(size) = parent_folder_entry.size.as_mut() {
-                        *size -= deleted_entry_size;
+                        match diff_kind {
+                            DiffKind::Subtract => *size -= entry_diff,
+                            DiffKind::Add => *size += entry_diff,
+                        }
                     }
                 }
                 parent_path = parent.to_path_buf();
@@ -173,7 +186,11 @@ impl App {
                     } else {
                         if let Ok(_) = delete_folder(&to_delete_path) {
                             if let Some(subfolder_size) = entry.size {
-                                self.propagate_size_update_upwards(&to_delete_path, subfolder_size);
+                                self.propagate_size_update_upwards(
+                                    &to_delete_path,
+                                    subfolder_size,
+                                    DiffKind::Subtract,
+                                );
                             }
                             folder.remove_selected();
                             let path_string = to_delete_path.to_string_lossy().into_owned();
@@ -189,7 +206,11 @@ impl App {
                     } else {
                         if let Ok(_) = delete_file(&to_delete_path) {
                             if let Some(subfile_size) = entry.size {
-                                self.propagate_size_update_upwards(&to_delete_path, subfile_size);
+                                self.propagate_size_update_upwards(
+                                    &to_delete_path,
+                                    subfile_size,
+                                    DiffKind::Subtract,
+                                );
                             }
                             folder.remove_selected();
                             self.set_current_folder(folder);
