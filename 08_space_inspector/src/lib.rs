@@ -9,12 +9,12 @@ use std::env;
 mod fs;
 mod ui;
 
-use fs::{delete_file, delete_folder, process_filepath, Folder, FolderEntryType};
+use fs::{delete_file, delete_folder, path_to_folder, Folder, FolderEntryType};
 
 #[derive(Debug)]
 pub struct App {
     confirming_deletion: bool,
-    current_path: String,
+    current_path: PathBuf,
     file_tree_map: HashMap<String, Folder>,
 }
 
@@ -23,7 +23,7 @@ impl App {
         App {
             confirming_deletion: false,
             file_tree_map: HashMap::new(),
-            current_path: ".".to_string(),
+            current_path: PathBuf::from("."),
         }
     }
 
@@ -32,18 +32,22 @@ impl App {
             Some(path) => {
                 let path_buf = PathBuf::from(&path);
                 if path_buf.is_absolute() {
-                    path_buf.to_string_lossy().into_owned()
+                    path_buf
                 } else {
                     let current_dir = env::current_dir().unwrap();
                     let abs_path = current_dir.join(&path_buf);
-                    abs_path.to_string_lossy().into_owned()
+                    abs_path
                 }
             }
-            None => env::current_dir().unwrap().to_string_lossy().into_owned(),
+            None => env::current_dir().unwrap(),
         };
 
         self.current_path = current_path;
-        self.process_filepath_if_not_exist();
+        self.process_filepath(&self.current_path.clone());
+    }
+
+    fn get_current_path_string(&self) -> String {
+        self.current_path.to_string_lossy().to_string()
     }
 
     fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
@@ -75,7 +79,7 @@ impl App {
         if let Some(mut folder) = self.get_current_folder().cloned() {
             if folder.cursor_index > 0 {
                 folder.cursor_index -= 1;
-                self.file_tree_map.insert(self.current_path.clone(), folder);
+                self.set_current_folder(folder);
             }
         }
         self.confirming_deletion = false;
@@ -85,14 +89,19 @@ impl App {
         if let Some(mut folder) = self.get_current_folder().cloned() {
             if folder.cursor_index < folder.entries.len() - 1 {
                 folder.cursor_index += 1;
-                self.file_tree_map.insert(self.current_path.clone(), folder);
+                self.set_current_folder(folder);
             }
         }
         self.confirming_deletion = false;
     }
 
     fn get_current_folder(&self) -> Option<&Folder> {
-        self.file_tree_map.get(&self.current_path)
+        self.file_tree_map.get(&self.get_current_path_string())
+    }
+
+    fn set_current_folder(&mut self, folder: Folder) {
+        self.file_tree_map
+            .insert(self.get_current_path_string(), folder);
     }
 
     fn propagate_size_update_upwards(&mut self, to_delete_path: &PathBuf, deleted_entry_size: u64) {
@@ -133,7 +142,7 @@ impl App {
                             folder.remove_selected();
                             let path_string = to_delete_path.to_string_lossy().into_owned();
                             self.file_tree_map.remove(&path_string);
-                            self.file_tree_map.insert(self.current_path.clone(), folder);
+                            self.set_current_folder(folder);
                             self.confirming_deletion = false;
                         }
                     }
@@ -147,7 +156,7 @@ impl App {
                                 self.propagate_size_update_upwards(&to_delete_path, subfile_size);
                             }
                             folder.remove_selected();
-                            self.file_tree_map.insert(self.current_path.clone(), folder);
+                            self.set_current_folder(folder);
                             self.confirming_deletion = false;
                         }
                     }
@@ -162,18 +171,17 @@ impl App {
 
             match entry.kind {
                 FolderEntryType::Parent => {
-                    if let Some(parent) = Path::new(&self.current_path).parent() {
-                        if let Some(parent_path) = parent.to_str() {
-                            self.current_path = parent_path.to_owned();
-                            self.process_filepath_if_not_exist();
-                        }
+                    if let Some(parent) = PathBuf::from(&self.current_path).parent() {
+                        let parent_buf = parent.to_path_buf();
+                        self.current_path = parent_buf.clone();
+                        self.process_filepath(&parent_buf);
                     }
                 }
                 FolderEntryType::Folder => {
                     let mut new_path = PathBuf::from(&self.current_path);
                     new_path.push(&entry.title);
-                    self.current_path = new_path.to_string_lossy().into_owned();
-                    self.process_filepath_if_not_exist();
+                    self.current_path = new_path;
+                    self.process_filepath(&PathBuf::from(&self.current_path));
                 }
                 FolderEntryType::File => {}
             }
@@ -181,10 +189,36 @@ impl App {
         self.confirming_deletion = false;
     }
 
-    fn process_filepath_if_not_exist(&mut self) {
-        if !self.file_tree_map.contains_key(&self.current_path) {
-            process_filepath(&mut self.file_tree_map, &PathBuf::from(&self.current_path));
+    fn process_filepath(&mut self, path_buf: &PathBuf) -> u64 {
+        if !self
+            .file_tree_map
+            .contains_key(&path_buf.to_string_lossy().to_string())
+        {
+            let path_string = path_buf.to_string_lossy().into_owned();
+
+            if let Some(folder) = self.file_tree_map.get(&path_string) {
+                return folder.get_size();
+            }
+
+            let mut folder = path_to_folder(path_buf);
+
+            for child_entry in folder.entries.iter_mut() {
+                if child_entry.kind == FolderEntryType::Folder {
+                    let mut subfolder_path = path_buf.clone();
+                    subfolder_path.push(&child_entry.title);
+
+                    let subfolder_size = self.process_filepath(&subfolder_path);
+                    child_entry.size = Some(subfolder_size);
+                }
+            }
+
+            let total_size = folder.get_size();
+
+            self.file_tree_map.insert(path_string, folder);
+
+            return total_size;
         }
+        0
     }
 }
 

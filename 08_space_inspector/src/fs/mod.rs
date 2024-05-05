@@ -1,123 +1,13 @@
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::{read_dir, remove_dir_all, remove_file};
 use std::path::PathBuf;
 
-use crate::ui::{TEXT_PARENT_DIR, TEXT_UNKNOWN};
+use crate::ui::TEXT_UNKNOWN;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq)]
-pub enum FolderEntryType {
-    Parent,
-    File,
-    Folder,
-}
-
-impl Ord for FolderEntryType {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match (self, other) {
-            (FolderEntryType::Parent, _) => Ordering::Less,
-            (FolderEntryType::Folder, FolderEntryType::Parent) => Ordering::Greater,
-            (FolderEntryType::Folder, FolderEntryType::Folder) => Ordering::Equal,
-            (FolderEntryType::Folder, _) => Ordering::Less,
-            (FolderEntryType::File, FolderEntryType::Parent) => Ordering::Greater,
-            (FolderEntryType::File, FolderEntryType::Folder) => Ordering::Greater,
-            (FolderEntryType::File, FolderEntryType::File) => Ordering::Equal,
-            (FolderEntryType::File, _) => Ordering::Less,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct FolderEntry {
-    pub title: String,
-    pub size: Option<u64>,
-    pub kind: FolderEntryType,
-}
-
-impl Ord for FolderEntry {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let kind_ordering = self.kind.cmp(&other.kind);
-
-        if kind_ordering != Ordering::Equal {
-            return kind_ordering;
-        }
-
-        self.title.cmp(&other.title)
-    }
-}
-
-impl PartialOrd for FolderEntry {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Folder {
-    pub title: String,
-    pub cursor_index: usize,
-    pub entries: Vec<FolderEntry>,
-}
-
-impl Folder {
-    pub fn new(title: String) -> Self {
-        Folder {
-            title,
-            cursor_index: 0,
-            entries: vec![FolderEntry {
-                kind: FolderEntryType::Parent,
-                title: String::from(TEXT_PARENT_DIR),
-                size: None,
-            }],
-        }
-    }
-
-    pub fn get_size(&self) -> u64 {
-        self.entries
-            .iter()
-            .fold(0, |acc, entry| acc + entry.size.unwrap_or(0))
-    }
-
-    pub fn get_selected_entry_size(&self) -> u64 {
-        self.get_selected_entry().size.unwrap_or(0)
-    }
-
-    pub fn remove_selected(&mut self) {
-        self.entries.remove(self.cursor_index);
-        if self.cursor_index > self.entries.len() - 1 {
-            self.cursor_index = self.entries.len() - 1
-        }
-    }
-
-    pub fn get_selected_entry(&self) -> &FolderEntry {
-        if let Some(entry) = self.entries.get(self.cursor_index) {
-            entry
-        } else {
-            panic!("Cursor index out of bounds: {}", self.cursor_index);
-        }
-    }
-
-    pub fn to_list(&self) -> Vec<FolderEntry> {
-        vec![&self.entries]
-            .into_iter()
-            .flat_map(|v| v.iter().cloned())
-            .collect()
-    }
-
-    pub fn get_max_entry_size(&self) -> u64 {
-        let mut max_entry_size = 0;
-
-        for file in &self.entries {
-            if let Some(size) = file.size {
-                if size > max_entry_size {
-                    max_entry_size = size
-                }
-            }
-        }
-
-        max_entry_size
-    }
-}
+mod folder;
+mod folder_entry;
+pub use folder::Folder;
+pub use folder_entry::{FolderEntry, FolderEntryType};
 
 pub fn path_to_folder(path: &PathBuf) -> Folder {
     let folder_name = path
@@ -161,30 +51,4 @@ pub fn delete_folder(path: &PathBuf) -> Result<(), std::io::Error> {
 
 pub fn delete_file(path: &PathBuf) -> Result<(), std::io::Error> {
     remove_file(path)
-}
-
-pub fn process_filepath(file_tree: &mut HashMap<String, Folder>, path_buf: &PathBuf) -> u64 {
-    let path_string = path_buf.to_string_lossy().into_owned();
-
-    if let Some(folder) = file_tree.get(&path_string) {
-        return folder.get_size();
-    }
-
-    let mut folder = path_to_folder(path_buf);
-
-    for child_entry in folder.entries.iter_mut() {
-        if child_entry.kind == FolderEntryType::Folder {
-            let mut subfolder_path = path_buf.clone();
-            subfolder_path.push(&child_entry.title);
-
-            let subfolder_size = process_filepath(file_tree, &subfolder_path);
-            child_entry.size = Some(subfolder_size);
-        }
-    }
-
-    let total_size = folder.get_size();
-
-    file_tree.insert(path_string, folder);
-
-    total_size
 }
