@@ -26,6 +26,7 @@ pub struct UIConfig {
     pub colored: bool,
     pub confirming_deletion: bool,
     pub sort_by: SortBy,
+    pub move_to_trash: bool,
 }
 
 impl Widget for &mut App {

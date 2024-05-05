@@ -1,7 +1,7 @@
+use crate::ui::{UIConfig, TEXT_UNKNOWN};
 use std::fs::{read_dir, remove_dir_all, remove_file};
 use std::path::PathBuf;
-
-use crate::ui::TEXT_UNKNOWN;
+use trash;
 
 mod folder;
 mod folder_entry;
@@ -49,10 +49,26 @@ pub fn path_to_folder(path: &PathBuf) -> Folder {
     folder
 }
 
-pub fn delete_folder(path: &PathBuf) -> Result<(), std::io::Error> {
-    remove_dir_all(path)
+pub fn delete_folder(path: &PathBuf, config: &UIConfig) -> std::io::Result<()> {
+    if config.move_to_trash {
+        match trash::delete(path) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err)),
+        }
+    } else {
+        remove_dir_all(path)?;
+        Ok(())
+    }
 }
 
-pub fn delete_file(path: &PathBuf) -> Result<(), std::io::Error> {
-    remove_file(path)
+pub fn delete_file(path: &PathBuf, config: &UIConfig) -> std::io::Result<()> {
+    if config.move_to_trash {
+        match trash::delete(path) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err)),
+        }
+    } else {
+        remove_file(path)?;
+        Ok(())
+    }
 }

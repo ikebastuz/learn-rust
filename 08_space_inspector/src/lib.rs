@@ -31,6 +31,7 @@ impl App {
                 colored: false,
                 confirming_deletion: false,
                 sort_by: SortBy::Title,
+                move_to_trash: true,
             },
         }
     }
@@ -77,6 +78,7 @@ impl App {
                         Char('d') | Delete => self.on_delete(),
                         Char('s') => self.on_toggle_sorting(),
                         Char('c') => self.on_toggle_coloring(),
+                        Char('t') => self.on_toggle_move_to_trash(),
                         Backspace => self.on_backspace(),
                         Enter => self.on_enter(),
                         _ => {}
@@ -84,6 +86,10 @@ impl App {
                 }
             }
         }
+    }
+
+    fn on_toggle_move_to_trash(&mut self) {
+        self.ui_config.move_to_trash = !self.ui_config.move_to_trash;
     }
 
     fn on_toggle_coloring(&mut self) {
@@ -190,7 +196,7 @@ impl App {
                     if !self.ui_config.confirming_deletion {
                         self.ui_config.confirming_deletion = true;
                     } else {
-                        if let Ok(_) = delete_folder(&to_delete_path) {
+                        if let Ok(_) = delete_folder(&to_delete_path, &self.ui_config) {
                             if let Some(subfolder_size) = entry.size {
                                 self.propagate_size_update_upwards(
                                     &to_delete_path,
@@ -210,7 +216,7 @@ impl App {
                     if !self.ui_config.confirming_deletion {
                         self.ui_config.confirming_deletion = true;
                     } else {
-                        if let Ok(_) = delete_file(&to_delete_path) {
+                        if let Ok(_) = delete_file(&to_delete_path, &self.ui_config) {
                             if let Some(subfile_size) = entry.size {
                                 self.propagate_size_update_upwards(
                                     &to_delete_path,
