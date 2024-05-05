@@ -33,6 +33,7 @@ impl App {
                 confirming_deletion: false,
                 sort_by: SortBy::Title,
                 move_to_trash: true,
+                open_file: true,
             },
         }
     }
@@ -264,9 +265,11 @@ impl App {
                     self.navigate_to_child(&entry.title);
                 }
                 FolderEntryType::File => {
-                    let mut file_name = PathBuf::from(&self.current_path.clone());
-                    file_name.push(entry.title.clone());
-                    let _ = opener::open(file_name);
+                    if self.ui_config.open_file {
+                        let mut file_name = PathBuf::from(&self.current_path.clone());
+                        file_name.push(entry.title.clone());
+                        let _ = opener::open(file_name);
+                    }
                 }
             }
         }

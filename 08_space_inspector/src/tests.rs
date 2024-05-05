@@ -8,6 +8,7 @@ mod tests {
     fn setup_app_view() -> App {
         let mut app = App::new();
         app.init(Some(TEST_FILE_PATH_VIEW.to_string()));
+        app.ui_config.open_file = false;
         app
     }
 
