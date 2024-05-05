@@ -3,3 +3,4 @@
 - [ ] - Async subfolder calculation
 - [ ] - Better list scrolling
 - [ ] - Maybe auto-center cursor
+- [ ] - Indexing / caching / refreshing
