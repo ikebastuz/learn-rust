@@ -4,4 +4,5 @@
 - [ ] - Better list scrolling
 - [ ] - Maybe auto-center cursor
 - [ ] - Indexing / caching / refreshing
-- [ ] - Delete to Trash bin
+- [x] - Delete to Trash bin
+- [ ] - PageUp/PageDown / g/G navigation

@@ -16,10 +16,9 @@ const TABLE_SPACE_WIDTH: usize = 40;
 pub const TEXT_UNKNOWN: &str = "N/A";
 pub const TEXT_PARENT_DIR: &str = "..";
 const TEXT_TITLE: &str = "Space inspector";
-const TEXT_HINT_L1: &str =
-    "Navigation: jk/↓↑ - move | \"Enter\" - select dir | \"Backspace\" - go to parent";
+const TEXT_HINT_L1: &str = "↓↑ - move | \"Enter\" - select | \"Backspace\" - parent";
 const TEXT_HINT_L2: &str =
-    "Actions: \"d-d\" - delete | \"s\" - sort | \"c\" - color | \"q\" - exit";
+    "\"d-d\" - delete | \"s\" - sort | \"c\" - color | \"t\" - trash | \"q\" - exit";
 
 #[derive(Debug)]
 pub struct UIConfig {
@@ -40,13 +39,23 @@ impl Widget for &mut App {
 
         let maybe_folder = self.get_current_folder();
 
-        render_title(header_area, buf, maybe_folder);
+        render_title(header_area, buf, maybe_folder, &self.ui_config);
         render_table(rest_area, buf, maybe_folder, &self.ui_config);
         render_footer(footer_area, buf);
     }
 }
 
-fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
+fn value_to_box(value: &bool) -> String {
+    match value {
+        true => "[x]".to_string(),
+        false => "[ ]".to_string(),
+    }
+}
+
+fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>, config: &UIConfig) {
+    let vertical_layout = Layout::horizontal([Constraint::Min(1), Constraint::Min(1)]);
+    let [left, right] = vertical_layout.areas(area);
+
     if let Some(folder) = maybe_folder {
         Paragraph::new(format!(
             "{} | {} | {}",
@@ -56,8 +65,17 @@ fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
         ))
         .bold()
         .centered()
-        .render(area, buf);
+        .render(left, buf);
     }
+
+    let config_text = Text::from(format!(
+        "Colored: {} | Trash: {}",
+        value_to_box(&config.colored),
+        value_to_box(&config.move_to_trash)
+    ));
+    Paragraph::new(config_text)
+        .right_aligned()
+        .render(right, buf);
 }
 
 fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>, config: &UIConfig) {
