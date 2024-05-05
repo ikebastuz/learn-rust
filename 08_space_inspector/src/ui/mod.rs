@@ -18,10 +18,12 @@ pub const TEXT_PARENT_DIR: &str = "..";
 const TEXT_TITLE: &str = "Space inspector";
 const TEXT_HINT_L1: &str =
     "Navigation: jk/↓↑ - move | \"Enter\" - select dir | \"Backspace\" - go to parent";
-const TEXT_HINT_L2: &str = "Actions: \"d-d\" - delete | \"s\" - sort | \"q\" - exit";
+const TEXT_HINT_L2: &str =
+    "Actions: \"d-d\" - delete | \"s\" - sort | \"c\" - color | \"q\" - exit";
 
 #[derive(Debug)]
 pub struct UIConfig {
+    pub colored: bool,
     pub confirming_deletion: bool,
     pub sort_by: SortBy,
 }
@@ -38,13 +40,7 @@ impl Widget for &mut App {
         let maybe_folder = self.get_current_folder();
 
         render_title(header_area, buf, maybe_folder);
-        render_table(
-            rest_area,
-            buf,
-            maybe_folder,
-            &self.ui_config.confirming_deletion,
-            &self.ui_config.sort_by,
-        );
+        render_table(rest_area, buf, maybe_folder, &self.ui_config);
         render_footer(footer_area, buf);
     }
 }
@@ -63,13 +59,7 @@ fn render_title(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>) {
     }
 }
 
-fn render_table(
-    area: Rect,
-    buf: &mut Buffer,
-    maybe_folder: Option<&Folder>,
-    confirming_deletion: &bool,
-    sort_by: &SortBy,
-) {
+fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>, config: &UIConfig) {
     if let Some(folder) = maybe_folder {
         let block = Block::default()
             .borders(Borders::ALL)
@@ -77,13 +67,13 @@ fn render_table(
             .bg(NORMAL_ROW_COLOR);
 
         let header_style = Style::default().fg(TABLE_HEADER_FG).bg(TABLE_HEADER_BG);
-        let selected_style = if *confirming_deletion {
+        let selected_style = if config.confirming_deletion {
             Style::default().bg(TEXT_PRE_DELETED_BG)
         } else {
             Style::default().bg(TEXT_SELECTED_BG)
         };
 
-        let header_titles = match sort_by {
+        let header_titles = match config.sort_by {
             SortBy::Title => ["", "Name ↓", "Size", "Space"],
             SortBy::Size => ["", "Name", "Size ↓", "Space"],
         };
@@ -95,7 +85,7 @@ fn render_table(
             .style(header_style)
             .height(1);
 
-        let rows = folder_to_rows(&folder);
+        let rows = folder_to_rows(&folder, &config);
 
         let table = Table::new(
             rows,
@@ -121,7 +111,7 @@ fn render_table(
     }
 }
 
-fn folder_to_rows(folder: &Folder) -> Vec<Row> {
+fn folder_to_rows<'a>(folder: &'a Folder, config: &'a UIConfig) -> Vec<Row<'a>> {
     let max_entry_size = folder.get_max_entry_size();
 
     folder
@@ -148,12 +138,17 @@ fn folder_to_rows(folder: &Folder) -> Vec<Row> {
                 true => Text::from("[ ]"),
                 false => Text::from("   "),
             };
-            let s = Style::default().fg(color);
+
+            let mut bar_style = Style::default();
+            if config.colored {
+                bar_style = bar_style.fg(color);
+            }
+
             Row::new(vec![
                 prefix,
                 Text::from(item.title.clone()),
                 item_size,
-                bar.style(s),
+                bar.style(bar_style),
             ])
         })
         .collect()

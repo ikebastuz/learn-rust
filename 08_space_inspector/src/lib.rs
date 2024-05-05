@@ -28,6 +28,7 @@ impl App {
             file_tree_map: HashMap::new(),
             current_path: PathBuf::from("."),
             ui_config: UIConfig {
+                colored: false,
                 confirming_deletion: false,
                 sort_by: SortBy::Title,
             },
@@ -75,6 +76,7 @@ impl App {
                         Char('k') | Up => self.on_cursor_up(),
                         Char('d') | Delete => self.on_delete(),
                         Char('s') => self.on_toggle_sorting(),
+                        Char('c') => self.on_toggle_coloring(),
                         Backspace => self.on_backspace(),
                         Enter => self.on_enter(),
                         _ => {}
@@ -82,6 +84,10 @@ impl App {
                 }
             }
         }
+    }
+
+    fn on_toggle_coloring(&mut self) {
+        self.ui_config.colored = !self.ui_config.colored;
     }
 
     fn on_toggle_sorting(&mut self) {
