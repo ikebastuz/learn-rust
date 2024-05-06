@@ -111,7 +111,7 @@ fn render_table(area: Rect, buf: &mut Buffer, maybe_folder: Option<&Folder>, con
             rows,
             [
                 Constraint::Length(3),
-                Constraint::Length(20),
+                Constraint::Length(40),
                 Constraint::Length(20),
                 Constraint::Length(TABLE_SPACE_WIDTH as u16),
             ],
