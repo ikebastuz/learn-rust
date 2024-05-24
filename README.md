@@ -8,4 +8,5 @@ This is my playground as I journey through learning Rust.
 - [Algos](./05_algo/README.md)
 - Rustlings
 - [Game - Space invaders](./07_space_invaders/README.md) - **Game** - `bevy`
+- [Utility - Space inspector](./08_space_inspector/README.md) - **Utility** - `ratatui` / `multithreading`
 
